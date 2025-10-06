@@ -1,3 +1,5 @@
+[![npm](https://img.shields.io/npm/v/@tvlabs/wdio-service)](https://www.npmjs.com/package/@tvlabs/wdio-service)
+
 <p align="center">
   <a href="https://tvlabs.ai">
     <img alt="TV Labs Logo" width="200" src="https://tvlabs.ai/images/tvlabs.svg" />
