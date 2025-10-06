@@ -11,6 +11,7 @@ export type TVLabsServiceOptions = {
   app?: string;
   reconnectRetries?: number;
   attachRequestId?: boolean;
+  continueOnError?: boolean;
 };
 
 export type TVLabsCapabilities =

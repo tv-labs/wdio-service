@@ -112,7 +112,7 @@ run();
 
 - **Type:** `string`
 - **Required:** No
-- **Description:** Slug of the App for build uploads. When provided in combination with `buildPath`, the build is uploaded under this specified App.
+- **Description:** The slug of the app on the TV Labs platform to use to upload the build. When not provided, the organization's default app is used. You may find or create an app on the [Apps page](https://tvlabs.ai/app/apps) in the TV Labs platform.
 
 ### `retries`
 
@@ -134,3 +134,10 @@ run();
 - **Required:** No
 - **Default:** `true`
 - **Description:** Controls whether or not to attach an `x-request-id` header to each request made to the TV Labs platform.
+
+### `continueOnError`
+
+- **Type:** `boolean`
+- **Required:** No
+- **Default:** `false`
+- **Description:** Whether to continue the session request if any step fails. When `true`, the session request will still be made with the original provided capabilities. When `false`, the service will exit with a non-zero code.
