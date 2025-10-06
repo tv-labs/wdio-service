@@ -18,6 +18,8 @@ vi.mock('../src/channels/build', () => {
   };
 });
 
+vi.stubGlobal('process', { exit: vi.fn() });
+
 describe('TVLabsService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -144,7 +146,7 @@ describe('TVLabsService', () => {
     });
 
     it('throws if multi-remote capabilities are provided', () => {
-      const options = { apiKey: 'my-api-key' };
+      const options = { apiKey: 'my-api-key', continueOnError: true };
       const config = {};
       const capabilities = {
         remoteOne: { capabilities: {} },
@@ -156,6 +158,23 @@ describe('TVLabsService', () => {
       expect(() => service.onPrepare(config, capabilities)).toThrowError(
         'Multi-remote capabilities are not implemented. Contact TV Labs support if you are interested in this feature.',
       );
+      expect(vi.mocked(process).exit).not.toHaveBeenCalledWith(1);
+    });
+
+    it('exits on error when continueOnError is false', () => {
+      const options = { apiKey: 'my-api-key', continueOnError: false };
+      const config = {};
+      const capabilities = {
+        remoteOne: { capabilities: {} },
+        remoteTwo: { capabilities: {} },
+      };
+
+      const service = new TVLabsService(options, {}, config);
+
+      expect(() => service.onPrepare(config, capabilities)).toThrowError(
+        'Multi-remote capabilities are not implemented. Contact TV Labs support if you are interested in this feature.',
+      );
+      expect(vi.mocked(process).exit).toHaveBeenCalledWith(1);
     });
   });
 
@@ -219,7 +238,7 @@ describe('TVLabsService', () => {
       const config = {};
       const specs: string[] = [];
       const cid = '';
-      const options = { apiKey: 'my-api-key' };
+      const options = { apiKey: 'my-api-key', continueOnError: true };
       const capabilities: TVLabsCapabilities = {};
 
       fakeSessionChannel.newSession.mockRejectedValue(
@@ -231,6 +250,26 @@ describe('TVLabsService', () => {
       await expect(
         service.beforeSession(config, capabilities, specs, cid),
       ).rejects.toThrow('Could not create a new session.');
+      expect(vi.mocked(process).exit).not.toHaveBeenCalledWith(1);
+    });
+
+    it('exits on error when continueOnError is false', async () => {
+      const config = {};
+      const specs: string[] = [];
+      const cid = '';
+      const options = { apiKey: 'my-api-key', continueOnError: false };
+      const capabilities: TVLabsCapabilities = {};
+
+      fakeSessionChannel.newSession.mockRejectedValue(
+        new SevereServiceError('Could not create a new session.'),
+      );
+
+      const service = new TVLabsService(options, capabilities, config);
+
+      await expect(
+        service.beforeSession(config, capabilities, specs, cid),
+      ).rejects.toThrow('Could not create a new session.');
+      expect(vi.mocked(process).exit).toHaveBeenCalledWith(1);
     });
 
     it('creates build channel and uploads build when buildPath is provided', async () => {
@@ -312,6 +351,7 @@ describe('TVLabsService', () => {
       const options = {
         apiKey: 'my-api-key',
         buildPath,
+        continueOnError: true,
       };
       const capabilities: TVLabsCapabilities = {};
 

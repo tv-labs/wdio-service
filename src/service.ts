@@ -20,7 +20,7 @@ export default class TVLabsService implements Services.ServiceInstance {
     private _capabilities: Capabilities.ResolvedTestrunnerCapabilities,
     private _config: Options.WebdriverIO,
   ) {
-    this.log = new Logger('@tvlabs/wdio-server', this._config.logLevel);
+    this.log = new Logger('@tvlabs/wdio-service', this._config.logLevel);
     if (this.attachRequestId()) {
       this.setupRequestId();
     }
@@ -30,10 +30,18 @@ export default class TVLabsService implements Services.ServiceInstance {
     _config: Options.Testrunner,
     param: Capabilities.TestrunnerCapabilities,
   ) {
-    if (!Array.isArray(param)) {
-      throw new SevereServiceError(
-        'Multi-remote capabilities are not implemented. Contact TV Labs support if you are interested in this feature.',
-      );
+    try {
+      if (!Array.isArray(param)) {
+        throw new SevereServiceError(
+          'Multi-remote capabilities are not implemented. Contact TV Labs support if you are interested in this feature.',
+        );
+      }
+    } catch (error) {
+      if (!this.continueOnError()) {
+        process.exit(1);
+      }
+
+      throw error;
     }
   }
 
@@ -43,41 +51,49 @@ export default class TVLabsService implements Services.ServiceInstance {
     _specs: string[],
     _cid: string,
   ) {
-    const buildPath = this.buildPath();
+    try {
+      const buildPath = this.buildPath();
 
-    if (buildPath) {
-      const buildChannel = new BuildChannel(
-        this.buildEndpoint(),
+      if (buildPath) {
+        const buildChannel = new BuildChannel(
+          this.buildEndpoint(),
+          this.reconnectRetries(),
+          this.apiKey(),
+          this.logLevel(),
+        );
+
+        await buildChannel.connect();
+
+        capabilities['tvlabs:build'] = await buildChannel.uploadBuild(
+          buildPath,
+          this.appSlug(),
+        );
+
+        await buildChannel.disconnect();
+      }
+
+      const sessionChannel = new SessionChannel(
+        this.sessionEndpoint(),
         this.reconnectRetries(),
         this.apiKey(),
         this.logLevel(),
       );
 
-      await buildChannel.connect();
+      await sessionChannel.connect();
 
-      capabilities['tvlabs:build'] = await buildChannel.uploadBuild(
-        buildPath,
-        this.appSlug(),
+      capabilities['tvlabs:session_id'] = await sessionChannel.newSession(
+        capabilities,
+        this.retries(),
       );
 
-      await buildChannel.disconnect();
+      await sessionChannel.disconnect();
+    } catch (error) {
+      if (!this.continueOnError()) {
+        process.exit(1);
+      }
+
+      throw error;
     }
-
-    const sessionChannel = new SessionChannel(
-      this.sessionEndpoint(),
-      this.reconnectRetries(),
-      this.apiKey(),
-      this.logLevel(),
-    );
-
-    await sessionChannel.connect();
-
-    capabilities['tvlabs:session_id'] = await sessionChannel.newSession(
-      capabilities,
-      this.retries(),
-    );
-
-    await sessionChannel.disconnect();
   }
 
   private setupRequestId() {
@@ -120,6 +136,10 @@ export default class TVLabsService implements Services.ServiceInstance {
         headers[header] = value;
       }
     }
+  }
+
+  private continueOnError(): boolean {
+    return this._options.continueOnError ?? false;
   }
 
   private buildPath(): string | undefined {
