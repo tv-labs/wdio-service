@@ -14,6 +14,7 @@ import type {
 
 export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
+  private requestId: string | undefined;
 
   constructor(
     private _options: TVLabsServiceOptions,
@@ -24,6 +25,10 @@ export default class TVLabsService implements Services.ServiceInstance {
     if (this.attachRequestId()) {
       this.setupRequestId();
     }
+  }
+
+  lastRequestId(): string | undefined {
+    return this.requestId;
   }
 
   onPrepare(
@@ -116,7 +121,9 @@ export default class TVLabsService implements Services.ServiceInstance {
         requestId,
       );
 
-      this.log.info('ATTACHED REQUEST ID', requestId);
+      this.log.debug('ATTACHED REQUEST ID', requestId);
+
+      this.setRequestId(requestId);
 
       return originalRequestOptions;
     };
@@ -136,6 +143,10 @@ export default class TVLabsService implements Services.ServiceInstance {
         headers[header] = value;
       }
     }
+  }
+
+  private setRequestId(id: string) {
+    this.requestId = id;
   }
 
   private continueOnError(): boolean {

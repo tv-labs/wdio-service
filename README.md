@@ -143,3 +143,31 @@ run();
 - **Required:** No
 - **Default:** `false`
 - **Description:** Whether to continue the session request if any step fails. When `true`, the session request will still be made with the original provided capabilities. When `false`, the service will exit with a non-zero code.
+
+## Methods
+
+### `lastRequestId()`
+
+- **Returns:** `string | undefined`
+- **Description:** Returns the last request ID that was attached to a request made to the TV Labs platform. This is useful for correlating client-side logs with server-side logs. Returns `undefined` if no request has been made yet or if `attachRequestId` is set to `false`.
+
+#### Example
+
+```javascript
+import { remote } from 'webdriverio';
+import { TVLabsService } from '@tvlabs/wdio-service';
+
+const service = new TVLabsService(
+  { apiKey: process.env.TVLABS_API_KEY },
+  capabilities,
+  {},
+);
+
+await service.beforeSession(wdOpts, capabilities, [], '');
+
+const driver = await remote(wdOpts);
+
+// Get the last request ID
+const requestId = service.lastRequestId();
+console.log(`Last request ID: ${requestId}`);
+```

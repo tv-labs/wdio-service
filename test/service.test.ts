@@ -77,6 +77,90 @@ describe('TVLabsService', () => {
     expect(config.transformRequest).not.toBeDefined();
   });
 
+  describe('lastRequestId', () => {
+    it('returns undefined initially', () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+
+      const service = new TVLabsService(options, capabilities, config);
+
+      expect(service.lastRequestId()).toBeUndefined();
+    });
+
+    it('returns undefined when attachRequestId is false', () => {
+      const options = { apiKey: 'my-api-key', attachRequestId: false };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+
+      const service = new TVLabsService(options, capabilities, config);
+
+      expect(service.lastRequestId()).toBeUndefined();
+    });
+
+    it('returns the last request ID after a request is transformed', () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+
+      const service = new TVLabsService(options, capabilities, config);
+
+      expect(service.lastRequestId()).toBeUndefined();
+
+      const requestInit: RequestInit = {
+        method: 'GET',
+      };
+
+      const transformedRequestInit = config.transformRequest?.(requestInit);
+
+      const requestId = service.lastRequestId();
+      expect(requestId).toBeDefined();
+      expect(typeof requestId).toBe('string');
+      expect(requestId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      );
+
+      // Verify the request ID matches the one in the headers
+      const headers = transformedRequestInit?.headers as Record<string, string>;
+      expect(headers['x-request-id']).toBe(requestId);
+    });
+
+    it('returns the most recent request ID when multiple requests are made', () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+
+      const service = new TVLabsService(options, capabilities, config);
+
+      const requestInit1: RequestInit = { method: 'GET' };
+      const transformedRequestInit1 = config.transformRequest?.(requestInit1);
+      const requestId1 = service.lastRequestId();
+
+      const requestInit2: RequestInit = { method: 'POST' };
+      const transformedRequestInit2 = config.transformRequest?.(requestInit2);
+      const requestId2 = service.lastRequestId();
+
+      expect(requestId1).toBeDefined();
+      expect(requestId2).toBeDefined();
+      expect(requestId1).not.toBe(requestId2);
+
+      // lastRequestId should return the most recent one
+      expect(service.lastRequestId()).toBe(requestId2);
+
+      // Verify headers match
+      const headers1 = transformedRequestInit1?.headers as Record<
+        string,
+        string
+      >;
+      const headers2 = transformedRequestInit2?.headers as Record<
+        string,
+        string
+      >;
+      expect(headers1['x-request-id']).toBe(requestId1);
+      expect(headers2['x-request-id']).toBe(requestId2);
+    });
+  });
+
   it('does not clobber existing values in headers', () => {
     const options = { apiKey: 'my-api-key' };
     const capabilities: TVLabsCapabilities = {};
