@@ -76,7 +76,10 @@ async function run() {
     apiKey: process.env.TVLABS_API_TOKEN,
   }
 
-  const service = new TVLabsService(serviceOpts, capabilities, {})
+  // NOTE: it is important to make sure that
+  // the wdOpts passed here are the same reference
+  // as the one passed to remote()
+  const service = new TVLabsService(serviceOpts, capabilities, wdOpts)
 
   // The TV Labs service does not use specs or a cid, pass default values.
   const cid = ""
@@ -157,10 +160,13 @@ run();
 import { remote } from 'webdriverio';
 import { TVLabsService } from '@tvlabs/wdio-service';
 
+const capabilities = { ... };
+const wdOpts = { ... };
+
 const service = new TVLabsService(
   { apiKey: process.env.TVLABS_API_KEY },
   capabilities,
-  {},
+  wdOpts
 );
 
 await service.beforeSession(wdOpts, capabilities, [], '');
