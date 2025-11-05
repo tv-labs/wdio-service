@@ -3,18 +3,22 @@ import * as crypto from 'crypto';
 
 import { SessionChannel } from './channels/session.js';
 import { BuildChannel } from './channels/build.js';
+import { MetadataChannel } from './channels/metadata.js';
 import { Logger } from './logger.js';
 
 import type { Services, Capabilities, Options } from '@wdio/types';
 import type {
   TVLabsCapabilities,
   TVLabsServiceOptions,
+  TVLabsRequestMetadata,
+  TVLabsRequestMetadataResponse,
   LogLevel,
 } from './types.js';
 
 export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
+  private sessionId: string | undefined;
 
   constructor(
     private _options: TVLabsServiceOptions,
@@ -29,6 +33,42 @@ export default class TVLabsService implements Services.ServiceInstance {
 
   lastRequestId(): string | undefined {
     return this.requestId;
+  }
+
+  async requestMetadata(
+    requestIds: string | string[],
+  ): Promise<TVLabsRequestMetadata | TVLabsRequestMetadataResponse> {
+    if (!this.sessionId) {
+      throw new Error(
+        'No session ID available. Ensure beforeSession has completed successfully.',
+      );
+    }
+
+    const requestIdArray = Array.isArray(requestIds) ? requestIds : [requestIds];
+
+    const metadataChannel = new MetadataChannel(
+      this.sessionEndpoint(),
+      this.reconnectRetries(),
+      this.apiKey(),
+      this.logLevel(),
+    );
+
+    await metadataChannel.connect();
+
+    const response = await metadataChannel.getRequestMetadata(
+      this.sessionId,
+      requestIdArray,
+    );
+
+    await metadataChannel.disconnect();
+
+    // If a single request ID was passed, return just that request's metadata
+    if (!Array.isArray(requestIds)) {
+      return response[requestIds];
+    }
+
+    // Otherwise return the full map
+    return response;
   }
 
   onPrepare(
@@ -86,10 +126,13 @@ export default class TVLabsService implements Services.ServiceInstance {
 
       await sessionChannel.connect();
 
-      capabilities['tvlabs:session_id'] = await sessionChannel.newSession(
+      const sessionId = await sessionChannel.newSession(
         capabilities,
         this.retries(),
       );
+
+      capabilities['tvlabs:session_id'] = sessionId;
+      this.sessionId = sessionId;
 
       await sessionChannel.disconnect();
     } catch (error) {

@@ -71,3 +71,11 @@ export type TVLabsBuildMetadata = {
   size: number;
   sha256: string;
 };
+
+export type TVLabsRequestMetadata = {
+  [key: string]: unknown;
+};
+
+export type TVLabsRequestMetadataResponse = {
+  [request_id: string]: TVLabsRequestMetadata;
+};
