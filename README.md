@@ -76,7 +76,10 @@ async function run() {
     apiKey: process.env.TVLABS_API_TOKEN,
   }
 
-  const service = new TVLabsService(serviceOpts, capabilities, {})
+  // NOTE: it is important to make sure that
+  // the wdOpts passed here are the same reference
+  // as the one passed to remote()
+  const service = new TVLabsService(serviceOpts, capabilities, wdOpts)
 
   // The TV Labs service does not use specs or a cid, pass default values.
   const cid = ""
@@ -143,3 +146,34 @@ run();
 - **Required:** No
 - **Default:** `false`
 - **Description:** Whether to continue the session request if any step fails. When `true`, the session request will still be made with the original provided capabilities. When `false`, the service will exit with a non-zero code.
+
+## Methods
+
+### `lastRequestId()`
+
+- **Returns:** `string | undefined`
+- **Description:** Returns the last request ID that was attached to a request made to the TV Labs platform. This is useful for correlating client-side logs with server-side logs. Returns `undefined` if no request has been made yet or if `attachRequestId` is set to `false`.
+
+#### Example
+
+```javascript
+import { remote } from 'webdriverio';
+import { TVLabsService } from '@tvlabs/wdio-service';
+
+const capabilities = { ... };
+const wdOpts = { ... };
+
+const service = new TVLabsService(
+  { apiKey: process.env.TVLABS_API_KEY },
+  capabilities,
+  wdOpts
+);
+
+await service.beforeSession(wdOpts, capabilities, [], '');
+
+const driver = await remote(wdOpts);
+
+// Get the last request ID
+const requestId = service.lastRequestId();
+console.log(`Last request ID: ${requestId}`);
+```
