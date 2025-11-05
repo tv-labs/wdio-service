@@ -19,6 +19,7 @@ export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
   private sessionId: string | undefined;
+  private metadataChannel: MetadataChannel | undefined;
 
   constructor(
     private _options: TVLabsServiceOptions,
@@ -46,21 +47,22 @@ export default class TVLabsService implements Services.ServiceInstance {
 
     const requestIdArray = Array.isArray(requestIds) ? requestIds : [requestIds];
 
-    const metadataChannel = new MetadataChannel(
-      this.sessionEndpoint(),
-      this.reconnectRetries(),
-      this.apiKey(),
-      this.logLevel(),
-    );
+    // Create and connect to metadata channel if not already connected
+    if (!this.metadataChannel) {
+      this.metadataChannel = new MetadataChannel(
+        this.sessionEndpoint(),
+        this.reconnectRetries(),
+        this.apiKey(),
+        this.logLevel(),
+      );
 
-    await metadataChannel.connect();
+      await this.metadataChannel.connect();
+    }
 
-    const response = await metadataChannel.getRequestMetadata(
+    const response = await this.metadataChannel.getRequestMetadata(
       this.sessionId,
       requestIdArray,
     );
-
-    await metadataChannel.disconnect();
 
     // If a single request ID was passed, return just that request's metadata
     if (!Array.isArray(requestIds)) {
