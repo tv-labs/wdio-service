@@ -11,7 +11,13 @@
     "type": "git",
     "url": "git+https://github.com/tv-labs/wdio-service.git"
   },
-  "keywords": ["wdio-plugin", "wdio-service", "tvlabs", "tv-labs", "appium"],
+  "keywords": [
+    "wdio-plugin",
+    "wdio-service",
+    "tvlabs",
+    "tv-labs",
+    "appium"
+  ],
   "bugs": {
     "url": "https://github.com/tv-labs/wdio-service/issues"
   },
