@@ -56,10 +56,10 @@ export type TVLabsSessionRequestResponse = {
   method: string;
   req_body: ResponseAnyValue;
   resp_body: ResponseAnyValue;
-  requested_at: string;
-  responded_at: string;
-  video_start_time: number;
-  video_end_time: number;
+  requested_at: string | null;
+  responded_at: string | null;
+  video_start_time: number | null;
+  video_end_time: number | null;
 };
 
 export type TVLabsSocketParams = TVLabsServiceInfo & {
