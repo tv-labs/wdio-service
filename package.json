@@ -23,7 +23,7 @@
   },
   "scripts": {
     "build": "npm run clean && rollup -c",
-    "start": "ts-node src/index.ts",
+    "start": "tsx --env-file=.env scripts/test.ts",
     "dev": "ts-node --transpile-only src/index.ts",
     "clean": "rm -rf cjs && rm -rf esm",
     "format": "prettier --write .",
@@ -60,7 +60,8 @@
     "jiti": "^2.4.2",
     "prettier": "^3.5.3",
     "rollup": "^4.45.1",
-    "typescript": "^5.8.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.38.0",
     "vitest": "^3.0.9",
     "webdriverio": "^9.12.1"

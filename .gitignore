@@ -6,3 +6,7 @@ coverage
 # Distribution directories
 esm
 cjs
+
+
+# Local environment files
+.env

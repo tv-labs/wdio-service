@@ -37,15 +37,12 @@ export default class TVLabsService implements Services.ServiceInstance {
   }
 
   async requestMetadata(
+    sessionId: string,
     requestIds: string | string[],
   ): Promise<TVLabsRequestMetadata | TVLabsRequestMetadataResponse> {
-    if (!this.sessionId) {
-      throw new Error(
-        'No session ID available. Ensure beforeSession has completed successfully.',
-      );
-    }
-
-    const requestIdArray = Array.isArray(requestIds) ? requestIds : [requestIds];
+    const requestIdArray = Array.isArray(requestIds)
+      ? requestIds
+      : [requestIds];
 
     // Create and connect to metadata channel if not already connected
     if (!this.metadataChannel) {
@@ -60,7 +57,7 @@ export default class TVLabsService implements Services.ServiceInstance {
     }
 
     const response = await this.metadataChannel.getRequestMetadata(
-      this.sessionId,
+      sessionId,
       requestIdArray,
     );
 
@@ -128,13 +125,10 @@ export default class TVLabsService implements Services.ServiceInstance {
 
       await sessionChannel.connect();
 
-      const sessionId = await sessionChannel.newSession(
+      capabilities['tvlabs:session_id'] = await sessionChannel.newSession(
         capabilities,
         this.retries(),
       );
-
-      capabilities['tvlabs:session_id'] = sessionId;
-      this.sessionId = sessionId;
 
       await sessionChannel.disconnect();
     } catch (error) {
