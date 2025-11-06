@@ -28,6 +28,9 @@ export default class TVLabsService implements Services.ServiceInstance {
     private _config: Options.WebdriverIO,
   ) {
     this.log = new Logger('@tvlabs/wdio-service', this._config.logLevel);
+
+    this.injectAuthorizationHeader();
+
     if (this.attachRequestId()) {
       this.setupRequestId();
     }
@@ -140,6 +143,14 @@ export default class TVLabsService implements Services.ServiceInstance {
       }
 
       throw error;
+    }
+  }
+
+  private injectAuthorizationHeader() {
+    this._config.headers = this._config.headers || {};
+
+    if (!this._config.headers.Authorization) {
+      this._config.headers.Authorization = `Bearer ${this._options.apiKey}`;
     }
   }
 

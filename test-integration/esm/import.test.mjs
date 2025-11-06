@@ -51,4 +51,37 @@ describe('ESM Integration Tests', () => {
     const service = createService();
     expect(typeof service.requestMetadata).toBe('function');
   });
+
+  describe('Authorization header injection', () => {
+    it('should inject Authorization header when not present', () => {
+      const config = {};
+      new TVLabsService({ apiKey: 'test-api-key' }, {}, config);
+
+      expect(config.headers).toBeDefined();
+      expect(config.headers.Authorization).toBe('Bearer test-api-key');
+    });
+
+    it('should not override existing Authorization header', () => {
+      const config = {
+        headers: {
+          Authorization: 'Bearer existing-token',
+        },
+      };
+      new TVLabsService({ apiKey: 'test-api-key' }, {}, config);
+
+      expect(config.headers.Authorization).toBe('Bearer existing-token');
+    });
+
+    it('should preserve other headers when injecting Authorization', () => {
+      const config = {
+        headers: {
+          'X-Custom-Header': 'custom-value',
+        },
+      };
+      new TVLabsService({ apiKey: 'test-api-key' }, {}, config);
+
+      expect(config.headers['X-Custom-Header']).toBe('custom-value');
+      expect(config.headers.Authorization).toBe('Bearer test-api-key');
+    });
+  });
 });

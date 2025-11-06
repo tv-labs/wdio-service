@@ -12,9 +12,6 @@ const capabilities = {
 const wdOpts = {
   hostname: 'localhost',
   port: 4723, // Appium proxy
-  headers: {
-    Authorization: `Bearer ${apiKey}`,
-  },
   logLevel: 'info',
   capabilities,
 };
