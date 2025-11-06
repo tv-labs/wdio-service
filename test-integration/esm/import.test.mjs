@@ -38,7 +38,7 @@ describe('ESM Integration Tests', () => {
     };
 
     expect(() => service.onPrepare(multiRemoteConfig, {})).toThrow(
-      /multi-remote capabilities are not implemented/i
+      /multi-remote capabilities are not implemented/i,
     );
   });
 
