@@ -9,7 +9,7 @@ import type { Options } from '@wdio/types';
 
 vi.mock('../src/channels/session', () => {
   return {
-    SessionChannel: vi.fn(function(this: unknown) {
+    SessionChannel: vi.fn(function (this: unknown) {
       return fakeSessionChannel;
     }),
   };
@@ -17,7 +17,7 @@ vi.mock('../src/channels/session', () => {
 
 vi.mock('../src/channels/build', () => {
   return {
-    BuildChannel: vi.fn(function(this: unknown) {
+    BuildChannel: vi.fn(function (this: unknown) {
       return fakeBuildChannel;
     }),
   };
@@ -25,7 +25,7 @@ vi.mock('../src/channels/build', () => {
 
 vi.mock('../src/channels/metadata', () => {
   return {
-    MetadataChannel: vi.fn(function(this: unknown) {
+    MetadataChannel: vi.fn(function (this: unknown) {
       return fakeMetadataChannel;
     }),
   };
