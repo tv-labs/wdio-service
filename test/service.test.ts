@@ -9,19 +9,25 @@ import type { Options } from '@wdio/types';
 
 vi.mock('../src/channels/session', () => {
   return {
-    SessionChannel: vi.fn().mockImplementation(() => fakeSessionChannel),
+    SessionChannel: vi.fn(function (this: any) {
+      return fakeSessionChannel;
+    }),
   };
 });
 
 vi.mock('../src/channels/build', () => {
   return {
-    BuildChannel: vi.fn().mockImplementation(() => fakeBuildChannel),
+    BuildChannel: vi.fn(function (this: any) {
+      return fakeBuildChannel;
+    }),
   };
 });
 
 vi.mock('../src/channels/metadata', () => {
   return {
-    MetadataChannel: vi.fn().mockImplementation(() => fakeMetadataChannel),
+    MetadataChannel: vi.fn(function (this: any) {
+      return fakeMetadataChannel;
+    }),
   };
 });
 
