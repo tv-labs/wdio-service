@@ -31,6 +31,9 @@
     "lint": "eslint",
     "test": "vitest --config vitest.config.ts --coverage --run",
     "test:watch": "vitest --config vitest.config.ts --coverage",
+    "test:integration": "npm run build && npm run test:integration:esm && npm run test:integration:cjs",
+    "test:integration:esm": "vitest --config vitest.config.esm.ts --run",
+    "test:integration:cjs": "vitest --config vitest.config.cjs.ts --run",
     "publish:dry": "npm publish --access public --provenance --dry-run"
   },
   "type": "module",

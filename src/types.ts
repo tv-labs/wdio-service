@@ -46,7 +46,7 @@ export type ResponseAnyValue =
   | number
   | boolean
   | null
-  | JsonValue[]
+  | ResponseAnyValue[]
   | { [key: string]: ResponseAnyValue };
 
 export type TVLabsSessionRequestResponse = {

@@ -3,9 +3,9 @@ node_modules
 .DS_Store
 coverage
 
-# Distribution directories
-esm
-cjs
+# Distribution directories (root level only)
+/esm
+/cjs
 
 
 # Local environment files
