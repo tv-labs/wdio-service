@@ -9,7 +9,9 @@ const reconnectRetries = 5;
 
 vi.mock('phoenix', () => {
   return {
-    Socket: vi.fn().mockImplementation(() => fakeSocket),
+    Socket: vi.fn(function (this: unknown) {
+      return fakeSocket;
+    }),
   };
 });
 
