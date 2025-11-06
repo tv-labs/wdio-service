@@ -37,10 +37,12 @@ Unlike unit tests that test source code (`src/`), these integration tests:
 ## How It Works
 
 ### ESM Tests (`esm/import.test.mjs`)
+
 - Uses standard ESM `import` to load the ESM build
 - Imports directly from `../../esm/index.js`
 
 ### CJS Tests (`cjs/require.test.mjs`)
+
 - Written as an ESM file (`.mjs`) but uses `createRequire` to test CJS output
 - Uses Node's `createRequire` API to dynamically require the CJS build
 - This approach is necessary because Vitest itself is ESM-only
