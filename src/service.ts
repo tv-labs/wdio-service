@@ -150,7 +150,7 @@ export default class TVLabsService implements Services.ServiceInstance {
     this._config.headers = this._config.headers || {};
 
     if (!this._config.headers.Authorization) {
-      this._config.headers.Authorization = `Bearer ${this._options.apiKey}`;
+      this._config.headers.Authorization = `Bearer ${this.apiKey()}`;
     }
   }
 
