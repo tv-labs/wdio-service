@@ -3,6 +3,7 @@ import { SevereServiceError } from 'webdriverio';
 import TVLabsService, { type TVLabsCapabilities } from '../src/index.js';
 import { SessionChannel } from '../src/channels/session.js';
 import { BuildChannel } from '../src/channels/build.js';
+import { MetadataChannel } from '../src/channels/metadata.js';
 
 import type { Options } from '@wdio/types';
 
@@ -15,6 +16,12 @@ vi.mock('../src/channels/session', () => {
 vi.mock('../src/channels/build', () => {
   return {
     BuildChannel: vi.fn().mockImplementation(() => fakeBuildChannel),
+  };
+});
+
+vi.mock('../src/channels/metadata', () => {
+  return {
+    MetadataChannel: vi.fn().mockImplementation(() => fakeMetadataChannel),
   };
 });
 
@@ -485,6 +492,149 @@ describe('TVLabsService', () => {
       expect(capabilities['tvlabs:build']).toBeUndefined();
     });
   });
+
+  describe('requestMetadata', () => {
+    it('returns metadata for a single request ID', async () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+      const sessionId = randomUUID();
+      const requestId = randomUUID();
+      const mockMetadata = {
+        path: '/session/123/element',
+        method: 'POST',
+        status: 200,
+      };
+
+      fakeMetadataChannel.getRequestMetadata.mockResolvedValue({
+        [requestId]: mockMetadata,
+      });
+
+      const service = new TVLabsService(options, capabilities, config);
+      const result = await service.requestMetadata(sessionId, requestId);
+
+      expect(fakeMetadataChannel.connect).toHaveBeenCalled();
+      expect(fakeMetadataChannel.getRequestMetadata).toHaveBeenCalledWith(
+        sessionId,
+        [requestId],
+      );
+      expect(result).toEqual(mockMetadata);
+    });
+
+    it('returns metadata for multiple request IDs', async () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+      const sessionId = randomUUID();
+      const requestId1 = randomUUID();
+      const requestId2 = randomUUID();
+      const mockMetadataResponse = {
+        [requestId1]: {
+          path: '/session/123/element',
+          method: 'POST',
+          status: 200,
+        },
+        [requestId2]: {
+          path: '/session/123/element/456/click',
+          method: 'POST',
+          status: 200,
+        },
+      };
+
+      fakeMetadataChannel.getRequestMetadata.mockResolvedValue(
+        mockMetadataResponse,
+      );
+
+      const service = new TVLabsService(options, capabilities, config);
+      const result = await service.requestMetadata(sessionId, [
+        requestId1,
+        requestId2,
+      ]);
+
+      expect(fakeMetadataChannel.connect).toHaveBeenCalled();
+      expect(fakeMetadataChannel.getRequestMetadata).toHaveBeenCalledWith(
+        sessionId,
+        [requestId1, requestId2],
+      );
+      expect(result).toEqual(mockMetadataResponse);
+    });
+
+    it('reuses metadata channel on subsequent calls', async () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+      const sessionId = randomUUID();
+      const requestId1 = randomUUID();
+      const requestId2 = randomUUID();
+
+      fakeMetadataChannel.getRequestMetadata.mockResolvedValue({
+        [requestId1]: { data: 'test1' },
+      });
+
+      const service = new TVLabsService(options, capabilities, config);
+
+      await service.requestMetadata(sessionId, requestId1);
+      expect(fakeMetadataChannel.connect).toHaveBeenCalledTimes(1);
+
+      fakeMetadataChannel.getRequestMetadata.mockResolvedValue({
+        [requestId2]: { data: 'test2' },
+      });
+
+      await service.requestMetadata(sessionId, requestId2);
+      expect(fakeMetadataChannel.connect).toHaveBeenCalledTimes(1);
+      expect(fakeMetadataChannel.getRequestMetadata).toHaveBeenCalledTimes(2);
+    });
+
+    it('passes correct options to MetadataChannel constructor', async () => {
+      const config: Options.WebdriverIO = { logLevel: 'debug' };
+      const capabilities: TVLabsCapabilities = {};
+      const options = {
+        apiKey: randomUUID(),
+        reconnectRetries: randomInt(1, 10),
+        sessionEndpoint: 'wss://custom.endpoint.com',
+      };
+      const sessionId = randomUUID();
+      const requestId = randomUUID();
+
+      fakeMetadataChannel.getRequestMetadata.mockResolvedValue({
+        [requestId]: {},
+      });
+
+      const service = new TVLabsService(options, capabilities, config);
+      await service.requestMetadata(sessionId, requestId);
+
+      expect(vi.mocked(MetadataChannel)).toHaveBeenCalledWith(
+        options.sessionEndpoint,
+        options.reconnectRetries,
+        options.apiKey,
+        config.logLevel,
+      );
+    });
+
+    it('uses default sessionEndpoint when not provided', async () => {
+      const config: Options.WebdriverIO = {};
+      const capabilities: TVLabsCapabilities = {};
+      const options = {
+        apiKey: 'test-api-key',
+      };
+      const sessionId = randomUUID();
+      const requestId = randomUUID();
+
+      fakeMetadataChannel.getRequestMetadata.mockResolvedValue({
+        [requestId]: {},
+      });
+
+      const service = new TVLabsService(options, capabilities, config);
+      await service.requestMetadata(sessionId, requestId);
+
+      expect(vi.mocked(MetadataChannel)).toHaveBeenCalledWith(
+        'wss://tvlabs.ai/appium',
+        5, // default reconnectRetries
+        options.apiKey,
+        'info', // default logLevel
+      );
+    });
+  });
 });
 
 const fakeSessionChannel = {
@@ -497,4 +647,10 @@ const fakeBuildChannel = {
   connect: vi.fn(),
   disconnect: vi.fn(),
   uploadBuild: vi.fn(),
+};
+
+const fakeMetadataChannel = {
+  connect: vi.fn(),
+  disconnect: vi.fn(),
+  getRequestMetadata: vi.fn(),
 };

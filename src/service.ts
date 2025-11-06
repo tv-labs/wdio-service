@@ -4,18 +4,23 @@ import { getServiceVersion } from './utils.js';
 
 import { SessionChannel } from './channels/session.js';
 import { BuildChannel } from './channels/build.js';
+import { MetadataChannel } from './channels/metadata.js';
 import { Logger } from './logger.js';
 
 import type { Services, Capabilities, Options } from '@wdio/types';
 import type {
   TVLabsCapabilities,
   TVLabsServiceOptions,
+  TVLabsRequestMetadata,
+  TVLabsRequestMetadataResponse,
   LogLevel,
 } from './types.js';
 
 export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
+  private sessionId: string | undefined;
+  private metadataChannel: MetadataChannel | undefined;
 
   constructor(
     private _options: TVLabsServiceOptions,
@@ -32,6 +37,40 @@ export default class TVLabsService implements Services.ServiceInstance {
 
   lastRequestId(): string | undefined {
     return this.requestId;
+  }
+
+  async requestMetadata(
+    sessionId: string,
+    requestIds: string | string[],
+  ): Promise<TVLabsRequestMetadata | TVLabsRequestMetadataResponse> {
+    const requestIdArray = Array.isArray(requestIds)
+      ? requestIds
+      : [requestIds];
+
+    // Create and connect to metadata channel if not already connected
+    if (!this.metadataChannel) {
+      this.metadataChannel = new MetadataChannel(
+        this.sessionEndpoint(),
+        this.reconnectRetries(),
+        this.apiKey(),
+        this.logLevel(),
+      );
+
+      await this.metadataChannel.connect();
+    }
+
+    const response = await this.metadataChannel.getRequestMetadata(
+      sessionId,
+      requestIdArray,
+    );
+
+    // If a single request ID was passed, return just that request's metadata
+    if (!Array.isArray(requestIds)) {
+      return response[requestIds];
+    }
+
+    // Otherwise return the full map
+    return response;
   }
 
   onPrepare(

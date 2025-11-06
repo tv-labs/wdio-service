@@ -41,8 +41,25 @@ export type TVLabsSessionRequestUpdate = {
   reason: string;
 };
 
+export type ResponseAnyValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: ResponseAnyValue };
+
 export type TVLabsSessionRequestResponse = {
+  status: number;
+  path: string;
   request_id: string;
+  method: string;
+  req_body: ResponseAnyValue;
+  resp_body: ResponseAnyValue;
+  requested_at: string | null;
+  responded_at: string | null;
+  video_start_time: number | null;
+  video_end_time: number | null;
 };
 
 export type TVLabsSocketParams = TVLabsServiceInfo & {
@@ -70,4 +87,12 @@ export type TVLabsBuildMetadata = {
   type: string;
   size: number;
   sha256: string;
+};
+
+export type TVLabsRequestMetadata = {
+  [key: string]: unknown;
+};
+
+export type TVLabsRequestMetadataResponse = {
+  [request_id: string]: TVLabsRequestMetadata;
 };

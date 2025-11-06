@@ -177,3 +177,59 @@ const driver = await remote(wdOpts);
 const requestId = service.lastRequestId();
 console.log(`Last request ID: ${requestId}`);
 ```
+
+### `requestMetadata()`
+
+- **Parameters:** `appiumSessionId: string, requestIds: string | string[]`
+- **Returns:** `Promise<TVLabsRequestMetadata | TVLabsRequestMetadataResponse>`
+- **Description:** Fetches metadata for one or more Appium request IDs from the TV Labs platform. If a single request ID is provided, returns the metadata for that request. If an array of request IDs is provided, returns a map where keys are request IDs and values are their corresponding metadata.
+
+> **Note:** Request metadata is processed asynchronously on the TV Labs platform. To ensure metadata is available, it is recommended to fetch request metadata a few seconds after the request, or after the session has ended.
+
+#### Example
+
+```javascript
+import { remote } from 'webdriverio';
+import { TVLabsService } from '@tvlabs/wdio-service';
+
+const capabilities = { ... };
+const wdOpts = { ... };
+
+const service = new TVLabsService(
+  { apiKey: process.env.TVLABS_API_KEY },
+  capabilities,
+  wdOpts
+);
+
+await service.beforeSession(wdOpts, capabilities, [], '');
+
+const driver = await remote(wdOpts);
+let requestId;
+
+try {
+  // Perform some actions that generate requests
+  const element = await driver.$('#my-button');
+  await element.click();
+
+  // Get the request ID from the click
+  requestId = service.lastRequestId();
+  console.log(`Request ID: ${requestId}`);
+} finally {
+  await driver.deleteSession();
+}
+
+// Fetch metadata after session ends (recommended)
+if (requestId) {
+  const metadata = await service.requestMetadata(driver.sessionId, requestId);
+  console.log('Request metadata:', metadata);
+}
+
+// Fetch metadata for multiple requests
+const multiMetadata = await service.requestMetadata("appium-session-id-1234"[
+  'request-id-123',
+  'request-id-456',
+  'request-id-789'
+]);
+
+console.log('Multiple requests metadata:', multiMetadata);
+```
