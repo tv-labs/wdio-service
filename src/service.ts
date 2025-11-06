@@ -1,5 +1,6 @@
 import { SevereServiceError } from 'webdriverio';
 import * as crypto from 'crypto';
+import { version } from '../package.json';
 
 import { SessionChannel } from './channels/session.js';
 import { BuildChannel } from './channels/build.js';
@@ -25,6 +26,8 @@ export default class TVLabsService implements Services.ServiceInstance {
     if (this.attachRequestId()) {
       this.setupRequestId();
     }
+
+    this.log.info(`Instantiated TVLabsService v${version}`);
   }
 
   lastRequestId(): string | undefined {
