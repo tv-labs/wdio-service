@@ -20,8 +20,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
+      - name: Run unit tests
         run: npm run test
+
+      - name: Run integration tests
+        run: npm run test:integration
 
   Format:
     runs-on: ubuntu-latest
