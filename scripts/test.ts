@@ -43,7 +43,7 @@ async function runTest() {
       requests.push(service.lastRequestId());
     }
   } finally {
-    await driver.pause(3000);
+    await driver.pause(1000);
     await driver.deleteSession();
   }
 
@@ -57,7 +57,12 @@ async function runTest() {
   console.log('All requests', allRequests);
 }
 
-runTest().catch((error) => {
-  console.error('Test failed:', error);
-  process.exit(1);
-});
+runTest()
+  .then(() => {
+    console.log('Test completed successfully');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('Test failed:', error);
+    process.exit(1);
+  });
