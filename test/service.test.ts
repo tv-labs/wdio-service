@@ -9,19 +9,25 @@ import type { Options } from '@wdio/types';
 
 vi.mock('../src/channels/session', () => {
   return {
-    SessionChannel: vi.fn().mockImplementation(() => fakeSessionChannel),
+    SessionChannel: vi.fn(function (this: unknown) {
+      return fakeSessionChannel;
+    }),
   };
 });
 
 vi.mock('../src/channels/build', () => {
   return {
-    BuildChannel: vi.fn().mockImplementation(() => fakeBuildChannel),
+    BuildChannel: vi.fn(function (this: unknown) {
+      return fakeBuildChannel;
+    }),
   };
 });
 
 vi.mock('../src/channels/metadata', () => {
   return {
-    MetadataChannel: vi.fn().mockImplementation(() => fakeMetadataChannel),
+    MetadataChannel: vi.fn(function (this: unknown) {
+      return fakeMetadataChannel;
+    }),
   };
 });
 
@@ -82,6 +88,52 @@ describe('TVLabsService', () => {
 
     expect(service).toBeInstanceOf(TVLabsService);
     expect(config.transformRequest).not.toBeDefined();
+  });
+
+  describe('Authorization header injection', () => {
+    it('injects Authorization header when not present', () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+
+      new TVLabsService(options, capabilities, config);
+
+      expect(config.headers).toBeDefined();
+      expect(config.headers?.Authorization).toBe('Bearer my-api-key');
+    });
+
+    it('does not override existing Authorization header', () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {
+        headers: {
+          Authorization: 'Bearer existing-token',
+        },
+      };
+
+      new TVLabsService(options, capabilities, config);
+
+      expect(config.headers?.Authorization).toBe('Bearer existing-token');
+    });
+
+    it('preserves other existing headers', () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {
+        headers: {
+          'X-Custom-Header': 'custom-value',
+          'User-Agent': 'my-agent',
+        },
+      };
+
+      new TVLabsService(options, capabilities, config);
+
+      expect(config.headers).toEqual({
+        'X-Custom-Header': 'custom-value',
+        'User-Agent': 'my-agent',
+        Authorization: 'Bearer my-api-key',
+      });
+    });
   });
 
   describe('lastRequestId', () => {

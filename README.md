@@ -18,7 +18,9 @@ If a build path is provided, the service first makes a build upload request to t
 
 The service then makes a session request and then subscribes to events for that request. Once the session has been filled and is ready for the Webdriver script to begin, the service receives a ready event with the TV Labs session ID. This session ID is injected into the capabilities as `tvlabs:session_id` on the Webdriver session create request.
 
-Additionally, the service adds a unique request ID for each request made. The service will generate and attach an `x-request-id` header before each request to the TV Labs platform. This can be used to correlate requests in the client side logs to the Appium server logs.
+Additionally, the service automatically injects an `Authorization` header with your API key (formatted as `Bearer ${apiKey}`) into all requests to the TV Labs platform. If you have already set an `Authorization` header in your configuration, the service will respect your existing header and not override it.
+
+The service also adds a unique request ID for each request made. The service will generate and attach an `x-request-id` header before each request to the TV Labs platform. This can be used to correlate requests in the client side logs to the Appium server logs.
 
 ## Installation
 
@@ -66,10 +68,7 @@ async function run() {
   const wdOpts = {
     capabilities,
     hostname: 'appium.tvlabs.ai',
-    port: 4723,
-    headers: {
-      Authorization: `Bearer ${process.env.TVLABS_API_TOKEN}`,
-    },
+    port: 4723
   };
 
   const serviceOpts = {
