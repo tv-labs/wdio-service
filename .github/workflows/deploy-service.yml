@@ -4,20 +4,21 @@ on:
   release:
     types: [published]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   Publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: './package.json'
-          registry-url: 'https://registry.npmjs.org'
+          node-version-file: "./package.json"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Get Package Version
         id: package-version
@@ -30,13 +31,9 @@ jobs:
         run: npm run build
 
       - name: Check auth token
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm whoami
 
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --provenance
 
       - name: Publish notification
