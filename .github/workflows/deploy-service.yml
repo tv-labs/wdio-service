@@ -17,8 +17,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: './package.json'
-          registry-url: 'https://registry.npmjs.org'
+          node-version-file: "./package.json"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Get Package Version
         id: package-version
@@ -29,9 +29,6 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Check auth token
-        run: npm whoami
 
       - name: Publish
         run: npm publish --access public --provenance
