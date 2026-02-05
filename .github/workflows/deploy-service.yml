@@ -4,12 +4,13 @@ on:
   release:
     types: [published]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   Publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,13 +31,9 @@ jobs:
         run: npm run build
 
       - name: Check auth token
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm whoami
 
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --provenance
 
       - name: Publish notification
