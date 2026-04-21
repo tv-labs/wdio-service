@@ -7,6 +7,6 @@ export async function getSessionMetadata(
 ): Promise<TVLabsSessionMetadataResponse> {
   return apiRequest<TVLabsSessionMetadataResponse>(
     context,
-    `/api/v1/sessions/${sessionId}`,
+    `/api/v1/sessions/appium/${sessionId}`,
   );
 }

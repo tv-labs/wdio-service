@@ -29,7 +29,7 @@ describe('getSessionMetadata', () => {
 
     expect(apiRequest).toHaveBeenCalledWith(
       context,
-      `/api/v1/sessions/${sessionId}`,
+      `/api/v1/sessions/appium/${sessionId}`,
     );
     expect(result).toEqual(mockResponse);
   });
