@@ -31,7 +31,9 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     const text = await response.text();
+
     log.error(`API request failed: ${response.status} ${text}`);
+
     throw new Error(
       `API request failed: ${response.status} ${response.statusText}`,
     );
