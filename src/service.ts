@@ -21,7 +21,6 @@ import type {
 export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
-  private sessionId: string | undefined;
   private metadataChannel: MetadataChannel | undefined;
 
   constructor(
