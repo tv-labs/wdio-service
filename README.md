@@ -232,3 +232,50 @@ const multiMetadata = await service.requestMetadata("appium-session-id-1234"[
 
 console.log('Multiple requests metadata:', multiMetadata);
 ```
+
+### `sessionMetadata()`
+
+- **Parameters:** `appiumSessionId: string`
+- **Returns:** `Promise<TVLabsSessionMetadataResponse>`
+- **Description:** Fetches metadata for a session by Appium session ID from the TV Labs platform.
+  
+> **Note:** Partial metadata will be available immediately after session creation. Some session metadata such as recording end time, session end time, and session duration are added asynchronously on the TV Labs platform after the session ends.
+
+#### Example
+
+```javascript
+import { remote } from 'webdriverio';
+import { TVLabsService } from '@tvlabs/wdio-service';
+
+const capabilities = { ... };
+const wdOpts = { ... };
+
+const service = new TVLabsService(
+  { apiKey: process.env.TVLABS_API_KEY },
+  capabilities,
+  wdOpts
+);
+
+await service.beforeSession(wdOpts, capabilities, [], '');
+
+const driver = await remote(wdOpts);
+const { sessionId } = driver;
+
+try {
+  const sessionMetadata = await service.sessionMetadata(sessionId);
+
+  const { data:
+    {
+      device: {
+        make: { display_name: make },
+        model: { display_name: model, year }
+      },
+      recording: { start_time }
+    }
+  } = sessionMetadata;
+
+  console.log(`Recording on ${year} ${make} ${model} started at ${start_time}`);
+} finally {
+  await driver.deleteSession();
+}
+```
