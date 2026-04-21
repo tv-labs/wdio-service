@@ -105,7 +105,7 @@ export type ApiContext = {
 export type TVLabsSessionMetadataResponse = {
   data: {
     id: string;
-    type: string;
+    type: TVLabsSessionType;
     status: string;
     team_id: string;
     start_time: string;
@@ -114,13 +114,14 @@ export type TVLabsSessionMetadataResponse = {
     organization_id: string;
     appium: {
       session_id: string;
-    };
+    } | null;
     application: {
       id: string;
       name: string;
       version: string;
-    };
+    } | null;
     device: {
+      description: string;
       make: {
         display_name: string;
       };
@@ -132,22 +133,23 @@ export type TVLabsSessionMetadataResponse = {
         key: string;
         name: string;
       };
-      type: string;
-    };
+      unit_id: string;
+      type: TVLabsDeviceType;
+    } | null;
     recording: {
       duration: number;
       start_time: string;
       end_time: string;
       hls_playlist_url: string;
       player_url: string;
-    };
+    } | null;
     teleport: {
       region: {
         country_name: string;
         locale_name: string;
         slug: string;
       };
-    };
+    } | null;
     http_archives: Array<{
       id: string;
       name: string;
@@ -178,6 +180,9 @@ export type HTTPMethod =
   | 'put'
   | 'head'
   | 'options';
+
+export type TVLabsSessionType = 'appium' | 'user' | 'automation';
+export type TVLabsDeviceType = 'tv' | 'stb' | 'mobile' | 'browser';
 
 export type TVLabsRequestMetadataResponse = {
   [request_id: string]: TVLabsRequestMetadata;
