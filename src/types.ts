@@ -6,6 +6,7 @@ export type TVLabsServiceOptions = {
   apiKey: string;
   sessionEndpoint?: string;
   buildEndpoint?: string;
+  apiBaseUrl?: string;
   retries?: number;
   buildPath?: string;
   app?: string;
@@ -87,6 +88,22 @@ export type TVLabsBuildMetadata = {
   type: string;
   size: number;
   sha256: string;
+};
+
+export type ApiRequestOptions = {
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+};
+
+export type ApiContext = {
+  baseUrl: string;
+  apiKey: string;
+  logLevel?: LogLevel;
+};
+
+export type TVLabsSessionMetadataResponse = {
+  [key: string]: unknown;
 };
 
 export type TVLabsRequestMetadata = {
