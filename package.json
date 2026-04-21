@@ -62,7 +62,7 @@
     "globals": "^16.0.0",
     "jiti": "^2.4.2",
     "prettier": "^3.5.3",
-    "rollup": "^4.45.1",
+    "rollup": "^4.60.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.38.0",
