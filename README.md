@@ -238,7 +238,7 @@ console.log('Multiple requests metadata:', multiMetadata);
 - **Parameters:** `appiumSessionId: string`
 - **Returns:** `Promise<TVLabsSessionMetadataResponse>`
 - **Description:** Fetches metadata for a session by Appium session ID from the TV Labs platform.
-  
+
 > **Note:** Partial metadata will be available immediately after session creation. Some session metadata such as recording end time, session end time, and session duration are added asynchronously on the TV Labs platform after the session ends.
 
 #### Example
