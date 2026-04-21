@@ -103,12 +103,75 @@ export type ApiContext = {
 };
 
 export type TVLabsSessionMetadataResponse = {
-  [key: string]: unknown;
+  data: {
+    id: string;
+    type: string;
+    status: string;
+    team_id: string;
+    start_time: string;
+    duration: number;
+    end_time: string;
+    organization_id: string;
+    appium: {
+      session_id: string;
+    };
+    application: {
+      id: string;
+      name: string;
+      version: string;
+    };
+    device: {
+      make: {
+        display_name: string;
+      };
+      model: {
+        display_name: string;
+        year: number;
+      };
+      platform: {
+        key: string;
+        name: string;
+      };
+      type: string;
+    };
+    recording: {
+      duration: number;
+      start_time: string;
+      end_time: string;
+      hls_playlist_url: string;
+      player_url: string;
+    };
+    teleport: {
+      region: {
+        country_name: string;
+        locale_name: string;
+        slug: string;
+      };
+    };
+  };
 };
 
 export type TVLabsRequestMetadata = {
-  [key: string]: unknown;
+  status: number;
+  path: string;
+  method: HTTPMethod;
+  request_id: string;
+  req_body: unknown;
+  resp_body: unknown;
+  requested_at: string;
+  responded_at: string;
+  video_end_time: number;
+  video_start_time: number;
 };
+
+export type HTTPMethod =
+  | 'post'
+  | 'get'
+  | 'delete'
+  | 'patch'
+  | 'put'
+  | 'head'
+  | 'options';
 
 export type TVLabsRequestMetadataResponse = {
   [request_id: string]: TVLabsRequestMetadata;

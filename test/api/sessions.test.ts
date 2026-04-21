@@ -46,10 +46,7 @@ describe('getSessionMetadata', () => {
 
     await getSessionMetadata(customContext, sessionId);
 
-    expect(apiRequest).toHaveBeenCalledWith(
-      customContext,
-      expect.any(String),
-    );
+    expect(apiRequest).toHaveBeenCalledWith(customContext, expect.any(String));
   });
 
   it('propagates errors from apiRequest', async () => {

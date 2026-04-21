@@ -22,13 +22,16 @@ describe('apiRequest', () => {
 
     await apiRequest(context, '/api/v1/test');
 
-    expect(mockFetch).toHaveBeenCalledWith('https://www.tvlabs.ai/api/v1/test', {
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer test-api-key',
-        'Content-Type': 'application/json',
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://www.tvlabs.ai/api/v1/test',
+      {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-api-key',
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
   });
 
   it('returns parsed JSON response', async () => {
