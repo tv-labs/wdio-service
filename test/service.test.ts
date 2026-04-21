@@ -4,6 +4,7 @@ import TVLabsService, { type TVLabsCapabilities } from '../src/index.js';
 import { SessionChannel } from '../src/channels/session.js';
 import { BuildChannel } from '../src/channels/build.js';
 import { MetadataChannel } from '../src/channels/metadata.js';
+import { getSessionMetadata } from '../src/api/sessions.js';
 
 import type { Options } from '@wdio/types';
 
@@ -28,6 +29,12 @@ vi.mock('../src/channels/metadata', () => {
     MetadataChannel: vi.fn(function (this: unknown) {
       return fakeMetadataChannel;
     }),
+  };
+});
+
+vi.mock('../src/api/sessions', () => {
+  return {
+    getSessionMetadata: vi.fn(),
   };
 });
 
@@ -684,6 +691,76 @@ describe('TVLabsService', () => {
         5, // default reconnectRetries
         options.apiKey,
         'info', // default logLevel
+      );
+    });
+  });
+
+  describe('sessionMetadata', () => {
+    it('returns session metadata', async () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+      const sessionId = randomUUID();
+      const mockResponse = {
+        id: sessionId,
+        recording_started_at: '2026-04-21T12:00:00Z',
+        recording_ended_at: '2026-04-21T12:05:00Z',
+      };
+
+      vi.mocked(getSessionMetadata).mockResolvedValue(mockResponse);
+
+      const service = new TVLabsService(options, capabilities, config);
+      const result = await service.sessionMetadata(sessionId);
+
+      expect(result).toEqual(mockResponse);
+      expect(getSessionMetadata).toHaveBeenCalledWith(
+        {
+          baseUrl: 'https://www.tvlabs.ai',
+          apiKey: 'my-api-key',
+          logLevel: 'info',
+        },
+        sessionId,
+      );
+    });
+
+    it('passes custom apiBaseUrl when provided', async () => {
+      const options = {
+        apiKey: 'my-api-key',
+        apiBaseUrl: 'https://custom.tvlabs.ai',
+      };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = { logLevel: 'debug' };
+      const sessionId = randomUUID();
+
+      vi.mocked(getSessionMetadata).mockResolvedValue({});
+
+      const service = new TVLabsService(options, capabilities, config);
+      await service.sessionMetadata(sessionId);
+
+      expect(getSessionMetadata).toHaveBeenCalledWith(
+        {
+          baseUrl: 'https://custom.tvlabs.ai',
+          apiKey: 'my-api-key',
+          logLevel: 'debug',
+        },
+        sessionId,
+      );
+    });
+
+    it('propagates errors from getSessionMetadata', async () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+      const sessionId = randomUUID();
+
+      vi.mocked(getSessionMetadata).mockRejectedValue(
+        new Error('API request failed: 404 Not Found'),
+      );
+
+      const service = new TVLabsService(options, capabilities, config);
+
+      await expect(service.sessionMetadata(sessionId)).rejects.toThrow(
+        'API request failed: 404 Not Found',
       );
     });
   });

@@ -5,6 +5,7 @@ import { getServiceVersion } from './utils.js';
 import { SessionChannel } from './channels/session.js';
 import { BuildChannel } from './channels/build.js';
 import { MetadataChannel } from './channels/metadata.js';
+import { getSessionMetadata } from './api/sessions.js';
 import { Logger } from './logger.js';
 
 import type { Services, Capabilities, Options } from '@wdio/types';
@@ -13,13 +14,13 @@ import type {
   TVLabsServiceOptions,
   TVLabsRequestMetadata,
   TVLabsRequestMetadataResponse,
+  TVLabsSessionMetadataResponse,
   LogLevel,
 } from './types.js';
 
 export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
-  private sessionId: string | undefined;
   private metadataChannel: MetadataChannel | undefined;
 
   constructor(
@@ -74,6 +75,19 @@ export default class TVLabsService implements Services.ServiceInstance {
 
     // Otherwise return the full map
     return response;
+  }
+
+  async sessionMetadata(
+    sessionId: string,
+  ): Promise<TVLabsSessionMetadataResponse> {
+    return getSessionMetadata(
+      {
+        baseUrl: this.apiBaseUrl(),
+        apiKey: this.apiKey(),
+        logLevel: this.logLevel(),
+      },
+      sessionId,
+    );
   }
 
   onPrepare(
@@ -220,6 +234,10 @@ export default class TVLabsService implements Services.ServiceInstance {
 
   private buildEndpoint(): string {
     return this._options.buildEndpoint ?? 'wss://tvlabs.ai/cli';
+  }
+
+  private apiBaseUrl(): string {
+    return this._options.apiBaseUrl ?? 'https://www.tvlabs.ai';
   }
 
   private retries(): number {
