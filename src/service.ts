@@ -237,6 +237,10 @@ export default class TVLabsService implements Services.ServiceInstance {
     return this._options.buildEndpoint ?? 'wss://tvlabs.ai/cli';
   }
 
+  private apiBaseUrl(): string {
+    return this._options.apiBaseUrl ?? 'https://www.tvlabs.ai';
+  }
+
   private retries(): number {
     return this._options.retries ?? 3;
   }
@@ -255,9 +259,5 @@ export default class TVLabsService implements Services.ServiceInstance {
 
   private reconnectRetries(): number {
     return this._options.reconnectRetries ?? 5;
-  }
-
-  private apiBaseUrl(): string {
-    return this._options.apiBaseUrl ?? 'https://www.tvlabs.ai';
   }
 }
