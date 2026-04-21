@@ -30,9 +30,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check auth token
-        run: npm whoami
-
       - name: Publish
         run: npm publish --access public --provenance
 
