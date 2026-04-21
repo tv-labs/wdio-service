@@ -148,6 +148,12 @@ export type TVLabsSessionMetadataResponse = {
         slug: string;
       };
     };
+    http_archives: Array<{
+      id: string;
+      name: string;
+      size: string;
+      created_at: string;
+    }>;
   };
 };
 
