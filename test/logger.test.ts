@@ -177,4 +177,47 @@ describe('Logger', () => {
       expect(consoleSpy.trace).not.toHaveBeenCalled();
     });
   });
+
+  describe('WDIO_LOG_LEVEL env fallback', () => {
+    const originalEnv = process.env.WDIO_LOG_LEVEL;
+
+    afterEach(() => {
+      if (originalEnv === undefined) {
+        delete process.env.WDIO_LOG_LEVEL;
+      } else {
+        process.env.WDIO_LOG_LEVEL = originalEnv;
+      }
+    });
+
+    it('uses WDIO_LOG_LEVEL when no level is passed', () => {
+      process.env.WDIO_LOG_LEVEL = 'debug';
+      const logger = new Logger('test');
+
+      logger.debug('debug message');
+
+      expect(consoleSpy.log).toHaveBeenCalledTimes(1);
+    });
+
+    it('explicit level wins over WDIO_LOG_LEVEL', () => {
+      process.env.WDIO_LOG_LEVEL = 'debug';
+      const logger = new Logger('test', 'error');
+
+      logger.debug('debug message');
+      logger.info('info message');
+      logger.error('error message');
+
+      expect(consoleSpy.log).not.toHaveBeenCalled();
+      expect(consoleSpy.error).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to info when WDIO_LOG_LEVEL is invalid', () => {
+      process.env.WDIO_LOG_LEVEL = 'bogus';
+      const logger = new Logger('test');
+
+      logger.debug('debug message');
+      logger.info('info message');
+
+      expect(consoleSpy.log).toHaveBeenCalledTimes(1);
+    });
+  });
 });

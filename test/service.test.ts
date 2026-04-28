@@ -38,7 +38,7 @@ vi.mock('../src/api/sessions', () => {
   };
 });
 
-vi.stubGlobal('process', { exit: vi.fn() });
+vi.stubGlobal('process', { exit: vi.fn(), env: {} });
 
 describe('TVLabsService', () => {
   beforeEach(() => {
