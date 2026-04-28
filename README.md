@@ -294,6 +294,7 @@ try {
 - **Description:** Creates a `TVLabsService` instance bound to an existing session without calling `beforeSession()`. Use this in a consumer repo that receives a `sessionId` from a session creator.
 
 The factory:
+
 - Sets `tvlabs:session_id` on `wdOpts.capabilities` so `remote(wdOpts)` attaches to the existing session.
 - Injects the `Authorization` header on `wdOpts`.
 - Installs the `x-request-id` tracking hook on `wdOpts` (unless `attachRequestId: false`), so `lastRequestId()` works locally.
@@ -349,7 +350,7 @@ try {
 const service = await TVLabsService.fromSession(
   sessionId,
   { apiKey: process.env.TVLABS_API_KEY, validate: true },
-  wdOpts
+  wdOpts,
 );
 ```
 
