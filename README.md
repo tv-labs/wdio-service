@@ -329,10 +329,14 @@ const appiumSessionId = process.env.APPIUM_SESSION_ID;
 const service = TVLabsService.fromSession(
   appiumSessionId,
   { apiKey: process.env.TVLABS_API_KEY },
-  wdOpts
+  wdOpts,
 );
 
-const driver = await attach({ sessionId: appiumSessionId, ...wdOpts, options: wdOpts });
+const driver = await attach({
+  sessionId: appiumSessionId,
+  ...wdOpts,
+  options: wdOpts,
+});
 
 try {
   const element = await driver.$('#my-button');
@@ -415,10 +419,14 @@ const wdOpts = {
 const service = TVLabsService.fromSession(
   appiumSessionId,
   { apiKey: process.env.TVLABS_API_KEY },
-  wdOpts
+  wdOpts,
 );
 
-const driver = await attach({ sessionId: appiumSessionId, ...wdOpts, options: wdOpts });
+const driver = await attach({
+  sessionId: appiumSessionId,
+  ...wdOpts,
+  options: wdOpts,
+});
 
 try {
   // All telemetry methods work

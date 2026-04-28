@@ -767,22 +767,14 @@ describe('TVLabsService', () => {
 
   describe('disconnect', () => {
     it('is a no-op when no metadata channel was opened', async () => {
-      const service = new TVLabsService(
-        { apiKey: 'my-api-key' },
-        {},
-        {},
-      );
+      const service = new TVLabsService({ apiKey: 'my-api-key' }, {}, {});
 
       await expect(service.disconnect()).resolves.toBeUndefined();
       expect(fakeMetadataChannel.disconnect).not.toHaveBeenCalled();
     });
 
     it('closes the metadata channel after requestMetadata opened it', async () => {
-      const service = new TVLabsService(
-        { apiKey: 'my-api-key' },
-        {},
-        {},
-      );
+      const service = new TVLabsService({ apiKey: 'my-api-key' }, {}, {});
       const sessionId = randomUUID();
       const requestId = randomUUID();
 
