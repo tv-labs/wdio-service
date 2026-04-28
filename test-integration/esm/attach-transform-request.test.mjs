@@ -31,7 +31,7 @@ function startStubServer() {
       const body = JSON.stringify({ value: null });
       res.writeHead(200, {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body),
+        'Content-Length': body.length,
       });
       res.end(body);
     });
