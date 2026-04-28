@@ -1,8 +1,5 @@
 import type { LogLevel } from './types.js';
 
-// TODO: Replace this with @wdio/logger
-// It is currently not compatible with CJS
-
 const LOG_LEVELS: Record<LogLevel, number> = {
   error: 0,
   warn: 1,
@@ -12,11 +9,20 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   silent: 5,
 };
 
+function envLogLevel(): LogLevel | undefined {
+  const value = process.env.WDIO_LOG_LEVEL;
+  return value && value in LOG_LEVELS ? (value as LogLevel) : undefined;
+}
+
 export class Logger {
+  private logLevel: LogLevel;
+
   constructor(
     private name: string,
-    private logLevel: LogLevel = 'info',
-  ) {}
+    logLevel?: LogLevel,
+  ) {
+    this.logLevel = logLevel ?? envLogLevel() ?? 'info';
+  }
 
   private shouldLog(level: LogLevel): boolean {
     if (this.logLevel === 'silent') {
