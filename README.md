@@ -146,13 +146,6 @@ run();
 - **Default:** `false`
 - **Description:** Whether to continue the session request if any step fails. When `true`, the session request will still be made with the original provided capabilities. When `false`, the service will exit with a non-zero code.
 
-### `validate`
-
-- **Type:** `boolean`
-- **Required:** No
-- **Default:** `false`
-- **Description:** Only used with `TVLabsService.fromSession()`. When `true`, the factory eagerly verifies the Appium session exists by calling the TV Labs API before returning the service instance. This makes `fromSession()` return a `Promise<TVLabsService>` instead of a synchronous `TVLabsService`. If the session is not found, a `SevereServiceError` is thrown.
-
 ## Methods
 
 ### `lastRequestId()`
@@ -245,6 +238,8 @@ console.log('Multiple requests metadata:', multiMetadata);
 - **Returns:** `Promise<void>`
 - **Description:** Closes any long-lived connections held by the service (currently the metadata channel WebSocket opened by `requestMetadata()`). Call this when you are finished with the service so the process can exit. Safe to call when no channel was opened, and safe to call multiple times.
 
+> **Note:** Await all in-flight `requestMetadata()` calls before calling `disconnect()`. Tearing down the metadata channel while a request is pending will cause that call to reject.
+
 ### `sessionMetadata()`
 
 - **Parameters:** `appiumSessionId: string`
@@ -297,7 +292,7 @@ try {
 ### `TVLabsService.fromSession()`
 
 - **Parameters:** `appiumSessionId: string, options: TVLabsServiceOptions, wdOpts: Options.WebdriverIO`
-- **Returns:** `TVLabsService` (or `Promise<TVLabsService>` when `validate: true`)
+- **Returns:** `TVLabsService`
 - **Description:** Creates a `TVLabsService` instance bound to an existing Appium session without calling `beforeSession()`. Use this when you have an Appium session ID (the value of `driver.sessionId` after a previous `remote()` call) and want to attach to that session via WebdriverIO's `attach()`.
 
 The factory:
@@ -309,6 +304,8 @@ The factory:
 > **Important:** `wdOpts` must be the same reference later passed to `attach()`.
 
 > **Note:** Calling `beforeSession()` on a service created via `fromSession()` throws a `SevereServiceError` to prevent accidentally creating a duplicate session.
+
+> **Tip:** To verify the session exists before using it, call `await service.sessionMetadata(appiumSessionId)` immediately after construction. It throws a `SevereServiceError` if the session is not found or the API key cannot access it.
 
 #### Example
 
@@ -351,18 +348,6 @@ try {
 } finally {
   // Only delete the session if this process owns its lifecycle.
 }
-```
-
-#### Validated Example
-
-```javascript
-// With validate: true, fromSession returns a Promise and verifies
-// the session exists before returning the service instance.
-const service = await TVLabsService.fromSession(
-  appiumSessionId,
-  { apiKey: process.env.TVLABS_API_KEY, validate: true },
-  wdOpts,
-);
 ```
 
 ### `appiumSessionId`

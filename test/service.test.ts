@@ -988,64 +988,51 @@ describe('TVLabsService', () => {
       ).toThrow(SevereServiceError);
     });
 
-    describe('validate: true', () => {
-      it('returns a Promise that resolves to a TVLabsService', async () => {
-        const sessionId = randomUUID();
-        const options = { apiKey: 'my-api-key', validate: true as const };
-        const capabilities: TVLabsCapabilities = {};
-        const wdOpts: Options.WebdriverIO = { capabilities };
+    it('disconnect() is a no-op on a rehydrated instance with no open channel', async () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
 
-        vi.mocked(getSessionMetadata).mockResolvedValue({
-          id: sessionId,
-        });
+      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
-        const result = TVLabsService.fromSession(sessionId, options, wdOpts);
-
-        expect(result).toBeInstanceOf(Promise);
-
-        const service = await result;
-        expect(service).toBeInstanceOf(TVLabsService);
-        expect(service.appiumSessionId).toBe(sessionId);
-      });
-
-      it('calls getSessionMetadata to validate the session', async () => {
-        const sessionId = randomUUID();
-        const options = { apiKey: 'my-api-key', validate: true as const };
-        const capabilities: TVLabsCapabilities = {};
-        const wdOpts: Options.WebdriverIO = { capabilities };
-
-        vi.mocked(getSessionMetadata).mockResolvedValue({});
-
-        await TVLabsService.fromSession(sessionId, options, wdOpts);
-
-        expect(getSessionMetadata).toHaveBeenCalledWith(
-          {
-            baseUrl: 'https://www.tvlabs.ai',
-            apiKey: 'my-api-key',
-            logLevel: 'info',
-          },
-          sessionId,
-        );
-      });
-
-      it('rejects with SevereServiceError when session is not found', async () => {
-        const sessionId = randomUUID();
-        const options = { apiKey: 'my-api-key', validate: true as const };
-        const capabilities: TVLabsCapabilities = {};
-        const wdOpts: Options.WebdriverIO = { capabilities };
-
-        vi.mocked(getSessionMetadata).mockRejectedValue(
-          new Error('API request failed: 404 Not Found'),
-        );
-
-        await expect(
-          TVLabsService.fromSession(sessionId, options, wdOpts),
-        ).rejects.toThrow(SevereServiceError);
-        await expect(
-          TVLabsService.fromSession(sessionId, options, wdOpts),
-        ).rejects.toThrow(`Cannot rehydrate: session ${sessionId}`);
-      });
+      await expect(service.disconnect()).resolves.toBeUndefined();
+      expect(fakeMetadataChannel.disconnect).not.toHaveBeenCalled();
     });
+
+    it('chains a user-provided transformRequest when attachRequestId is true', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+
+      const userHeader = 'x-my-header';
+      const userHeaderValue = 'my-value';
+      const wdOpts: Options.WebdriverIO & { transformRequest?: (r: RequestInit) => RequestInit } = {
+        capabilities,
+        transformRequest: (requestOptions: RequestInit) => ({
+          ...requestOptions,
+          headers: {
+            ...(requestOptions.headers as Record<string, string>),
+            [userHeader]: userHeaderValue,
+          },
+        }),
+      };
+
+      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+
+      // Invoke the installed transformRequest hook
+      const result = wdOpts.transformRequest!({} as RequestInit) as { headers: Record<string, string> };
+
+      // The user's header must be present (user's transformRequest was called)
+      expect(result.headers[userHeader]).toBe(userHeaderValue);
+
+      // The x-request-id header must also be present (TVLabs hook ran)
+      expect(result.headers['x-request-id']).toBeDefined();
+
+      // lastRequestId() must match what was injected
+      expect(service.lastRequestId()).toBe(result.headers['x-request-id']);
+    });
+
   });
 });
 

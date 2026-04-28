@@ -13,7 +13,6 @@ export type TVLabsServiceOptions = {
   reconnectRetries?: number;
   attachRequestId?: boolean;
   continueOnError?: boolean;
-  validate?: boolean;
 };
 
 export type TVLabsCapabilities =

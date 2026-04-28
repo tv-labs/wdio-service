@@ -54,25 +54,20 @@ export default class TVLabsService implements Services.ServiceInstance {
    * `attach()`. The factory mutates it to inject the authorization header
    * and the request-id tracking hook.
    *
+   * To verify the session exists before using it, call
+   * `await service.sessionMetadata(appiumSessionId)` immediately after
+   * construction. It throws if the session is not found or the API key
+   * cannot access it.
+   *
    * @param appiumSessionId - The Appium session ID returned by the proxy on the original `POST /session`. This is the value of `driver.sessionId` after `remote()` succeeded.
-   * @param options - Service options. Pass `validate: true` to eagerly verify the session exists.
+   * @param options - Service options.
    * @param wdOpts - WebdriverIO remote options. Must be the same reference passed to `attach()`.
    */
   static fromSession(
     appiumSessionId: string,
-    options: TVLabsServiceOptions & { validate: true },
-    wdOpts: Options.WebdriverIO & { capabilities?: unknown },
-  ): Promise<TVLabsService>;
-  static fromSession(
-    appiumSessionId: string,
     options: TVLabsServiceOptions,
     wdOpts: Options.WebdriverIO & { capabilities?: unknown },
-  ): TVLabsService;
-  static fromSession(
-    appiumSessionId: string,
-    options: TVLabsServiceOptions,
-    wdOpts: Options.WebdriverIO & { capabilities?: unknown },
-  ): TVLabsService | Promise<TVLabsService> {
+  ): TVLabsService {
     if (
       !wdOpts.capabilities ||
       typeof wdOpts.capabilities !== 'object' ||
@@ -90,25 +85,11 @@ export default class TVLabsService implements Services.ServiceInstance {
       wdOpts as Options.WebdriverIO,
     );
 
+    // _rehydrated and _appiumSessionId are always set together by this factory.
+    // Do not set either independently — the beforeSession() guard and the
+    // appiumSessionId getter both rely on them being in sync.
     service._rehydrated = true;
     service._appiumSessionId = appiumSessionId;
-
-    if (options.validate) {
-      return getSessionMetadata(
-        {
-          baseUrl: service.apiBaseUrl(),
-          apiKey: service.apiKey(),
-          logLevel: service.logLevel(),
-        },
-        appiumSessionId,
-      )
-        .then(() => service)
-        .catch((error) => {
-          throw new SevereServiceError(
-            `Cannot rehydrate: session ${appiumSessionId} not found or inaccessible. ${error instanceof Error ? error.message : String(error)}`,
-          );
-        });
-    }
 
     return service;
   }
@@ -176,6 +157,10 @@ export default class TVLabsService implements Services.ServiceInstance {
    * Closes any long-lived connections held by the service (currently the
    * metadata channel WebSocket). Safe to call when no channel was opened.
    * Call this when you are finished with the service so the process can exit.
+   *
+   * **Ordering:** Await all in-flight `requestMetadata()` calls before calling
+   * `disconnect()`. Tearing down the metadata channel while a request is
+   * pending will cause that call to reject.
    */
   async disconnect(): Promise<void> {
     if (this.metadataChannel) {
