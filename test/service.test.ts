@@ -764,6 +764,260 @@ describe('TVLabsService', () => {
       );
     });
   });
+
+  describe('fromSession', () => {
+    it('returns a TVLabsService instance synchronously', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+
+      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+
+      expect(service).toBeInstanceOf(TVLabsService);
+    });
+
+    it('sets tvlabs:session_id on the capabilities', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+
+      TVLabsService.fromSession(sessionId, options, wdOpts);
+
+      expect(capabilities['tvlabs:session_id']).toBe(sessionId);
+    });
+
+    it('installs transformRequest on wdOpts for request-id tracking', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+
+      TVLabsService.fromSession(sessionId, options, wdOpts);
+
+      expect(typeof wdOpts.transformRequest).toBe('function');
+    });
+
+    it('does not install transformRequest when attachRequestId is false', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key', attachRequestId: false };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+
+      TVLabsService.fromSession(sessionId, options, wdOpts);
+
+      expect(wdOpts.transformRequest).toBeUndefined();
+    });
+
+    it('injects Authorization header on wdOpts', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+
+      TVLabsService.fromSession(sessionId, options, wdOpts);
+
+      expect(wdOpts.headers?.Authorization).toBe('Bearer my-api-key');
+    });
+
+    it('lastRequestId returns the most recent ID after transformRequest fires', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+
+      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+
+      expect(service.lastRequestId()).toBeUndefined();
+
+      // Simulate a request going through the transformRequest hook
+      const requestOptions: RequestInit = { headers: {} };
+      wdOpts.transformRequest!(requestOptions);
+
+      const firstRequestId = service.lastRequestId();
+      expect(firstRequestId).toBeDefined();
+      expect(typeof firstRequestId).toBe('string');
+
+      // Make another request - should return the newest ID
+      wdOpts.transformRequest!(requestOptions);
+      const secondRequestId = service.lastRequestId();
+      expect(secondRequestId).toBeDefined();
+      expect(secondRequestId).not.toBe(firstRequestId);
+    });
+
+    it('sessionId getter returns the bound session ID', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+
+      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+
+      expect(service.sessionId).toBe(sessionId);
+    });
+
+    it('sessionId getter returns undefined for classic instances', () => {
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const config: Options.WebdriverIO = {};
+
+      const service = new TVLabsService(options, capabilities, config);
+
+      expect(service.sessionId).toBeUndefined();
+    });
+
+    it('beforeSession throws on a rehydrated instance', async () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+
+      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+
+      await expect(
+        service.beforeSession(wdOpts, capabilities, [], ''),
+      ).rejects.toThrow(SevereServiceError);
+      await expect(
+        service.beforeSession(wdOpts, capabilities, [], ''),
+      ).rejects.toThrow('beforeSession() is not valid on a rehydrated service');
+    });
+
+    it('requestMetadata works without beforeSession', async () => {
+      const sessionId = randomUUID();
+      const requestId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+      const mockMetadata = {
+        path: '/session/123/element',
+        method: 'POST',
+        status: 200,
+      };
+
+      fakeMetadataChannel.getRequestMetadata.mockResolvedValue({
+        [requestId]: mockMetadata,
+      });
+
+      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const result = await service.requestMetadata(sessionId, requestId);
+
+      expect(fakeMetadataChannel.connect).toHaveBeenCalled();
+      expect(fakeMetadataChannel.getRequestMetadata).toHaveBeenCalledWith(
+        sessionId,
+        [requestId],
+      );
+      expect(result).toEqual(mockMetadata);
+    });
+
+    it('sessionMetadata works without beforeSession', async () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const capabilities: TVLabsCapabilities = {};
+      const wdOpts: Options.WebdriverIO = { capabilities };
+      const mockResponse = {
+        id: sessionId,
+        recording_started_at: '2026-04-21T12:00:00Z',
+      };
+
+      vi.mocked(getSessionMetadata).mockResolvedValue(mockResponse);
+
+      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const result = await service.sessionMetadata(sessionId);
+
+      expect(result).toEqual(mockResponse);
+      expect(getSessionMetadata).toHaveBeenCalledWith(
+        {
+          baseUrl: 'https://www.tvlabs.ai',
+          apiKey: 'my-api-key',
+          logLevel: 'info',
+        },
+        sessionId,
+      );
+    });
+
+    it('throws when capabilities is missing', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const wdOpts: Options.WebdriverIO = {};
+
+      expect(() =>
+        TVLabsService.fromSession(sessionId, options, wdOpts),
+      ).toThrow(SevereServiceError);
+      expect(() =>
+        TVLabsService.fromSession(sessionId, options, wdOpts),
+      ).toThrow('wdOpts.capabilities must be a capabilities object');
+    });
+
+    it('throws when capabilities is an array (multi-remote)', () => {
+      const sessionId = randomUUID();
+      const options = { apiKey: 'my-api-key' };
+      const wdOpts = { capabilities: [] } as unknown as Options.WebdriverIO;
+
+      expect(() =>
+        TVLabsService.fromSession(sessionId, options, wdOpts),
+      ).toThrow(SevereServiceError);
+    });
+
+    describe('validate: true', () => {
+      it('returns a Promise that resolves to a TVLabsService', async () => {
+        const sessionId = randomUUID();
+        const options = { apiKey: 'my-api-key', validate: true as const };
+        const capabilities: TVLabsCapabilities = {};
+        const wdOpts: Options.WebdriverIO = { capabilities };
+
+        vi.mocked(getSessionMetadata).mockResolvedValue({
+          id: sessionId,
+        });
+
+        const result = TVLabsService.fromSession(sessionId, options, wdOpts);
+
+        expect(result).toBeInstanceOf(Promise);
+
+        const service = await result;
+        expect(service).toBeInstanceOf(TVLabsService);
+        expect(service.sessionId).toBe(sessionId);
+      });
+
+      it('calls getSessionMetadata to validate the session', async () => {
+        const sessionId = randomUUID();
+        const options = { apiKey: 'my-api-key', validate: true as const };
+        const capabilities: TVLabsCapabilities = {};
+        const wdOpts: Options.WebdriverIO = { capabilities };
+
+        vi.mocked(getSessionMetadata).mockResolvedValue({});
+
+        await TVLabsService.fromSession(sessionId, options, wdOpts);
+
+        expect(getSessionMetadata).toHaveBeenCalledWith(
+          {
+            baseUrl: 'https://www.tvlabs.ai',
+            apiKey: 'my-api-key',
+            logLevel: 'info',
+          },
+          sessionId,
+        );
+      });
+
+      it('rejects with SevereServiceError when session is not found', async () => {
+        const sessionId = randomUUID();
+        const options = { apiKey: 'my-api-key', validate: true as const };
+        const capabilities: TVLabsCapabilities = {};
+        const wdOpts: Options.WebdriverIO = { capabilities };
+
+        vi.mocked(getSessionMetadata).mockRejectedValue(
+          new Error('API request failed: 404 Not Found'),
+        );
+
+        await expect(
+          TVLabsService.fromSession(sessionId, options, wdOpts),
+        ).rejects.toThrow(SevereServiceError);
+        await expect(
+          TVLabsService.fromSession(sessionId, options, wdOpts),
+        ).rejects.toThrow(`Cannot rehydrate: session ${sessionId}`);
+      });
+    });
+  });
 });
 
 const fakeSessionChannel = {

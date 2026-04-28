@@ -146,6 +146,13 @@ run();
 - **Default:** `false`
 - **Description:** Whether to continue the session request if any step fails. When `true`, the session request will still be made with the original provided capabilities. When `false`, the service will exit with a non-zero code.
 
+### `validate`
+
+- **Type:** `boolean`
+- **Required:** No
+- **Default:** `false`
+- **Description:** Only used with `TVLabsService.fromSession()`. When `true`, the factory eagerly verifies the session exists by calling the TV Labs API before returning the service instance. This makes `fromSession()` return a `Promise<TVLabsService>` instead of a synchronous `TVLabsService`. If the session is not found, a `SevereServiceError` is thrown.
+
 ## Methods
 
 ### `lastRequestId()`
@@ -279,3 +286,141 @@ try {
   await driver.deleteSession();
 }
 ```
+
+### `TVLabsService.fromSession()`
+
+- **Parameters:** `sessionId: string, options: TVLabsServiceOptions, wdOpts: Options.WebdriverIO`
+- **Returns:** `TVLabsService` (or `Promise<TVLabsService>` when `validate: true`)
+- **Description:** Creates a `TVLabsService` instance bound to an existing session without calling `beforeSession()`. Use this in a consumer repo that receives a `sessionId` from a session creator.
+
+The factory:
+- Sets `tvlabs:session_id` on `wdOpts.capabilities` so `remote(wdOpts)` attaches to the existing session.
+- Injects the `Authorization` header on `wdOpts`.
+- Installs the `x-request-id` tracking hook on `wdOpts` (unless `attachRequestId: false`), so `lastRequestId()` works locally.
+
+> **Important:** `wdOpts` must be the same reference later passed to `remote()`.
+
+> **Note:** Calling `beforeSession()` on a rehydrated service throws a `SevereServiceError` to prevent accidentally creating a duplicate session.
+
+#### Example
+
+```javascript
+import { remote } from 'webdriverio';
+import { TVLabsService } from '@tvlabs/wdio-service';
+
+const capabilities = { ... };
+const wdOpts = {
+  capabilities,
+  hostname: 'appium.tvlabs.ai',
+  port: 4723,
+};
+
+// sessionId is received from the session creator (e.g. Repo A)
+const sessionId = process.env.SESSION_ID;
+
+const service = TVLabsService.fromSession(
+  sessionId,
+  { apiKey: process.env.TVLABS_API_KEY },
+  wdOpts
+);
+
+const driver = await remote(wdOpts);
+
+try {
+  const element = await driver.$('#my-button');
+  await element.click();
+
+  // Request tracking works locally
+  const requestId = service.lastRequestId();
+
+  // Telemetry queries work without beforeSession()
+  const metadata = await service.requestMetadata(sessionId, requestId);
+  console.log('Request metadata:', metadata);
+} finally {
+  await driver.deleteSession();
+}
+```
+
+#### Validated Example
+
+```javascript
+// With validate: true, fromSession returns a Promise and verifies
+// the session exists before returning the service instance.
+const service = await TVLabsService.fromSession(
+  sessionId,
+  { apiKey: process.env.TVLABS_API_KEY, validate: true },
+  wdOpts
+);
+```
+
+### `sessionId`
+
+- **Type:** getter
+- **Returns:** `string | undefined`
+- **Description:** Returns the session ID bound via `fromSession()`, or `undefined` for service instances created through the standard constructor.
+
+## Cross-Repo Session Reuse
+
+In a distributed test setup where session creation and session usage happen in different repos, you can use `fromSession()` to reconstruct service context in the consumer repo.
+
+### Session Creator (Repo A)
+
+```javascript
+import { remote } from 'webdriverio';
+import { TVLabsService } from '@tvlabs/wdio-service';
+
+const capabilities = { ... };
+const wdOpts = {
+  capabilities,
+  hostname: 'appium.tvlabs.ai',
+  port: 4723,
+};
+
+const service = new TVLabsService(
+  { apiKey: process.env.TVLABS_API_KEY },
+  capabilities,
+  wdOpts
+);
+
+await service.beforeSession(wdOpts, capabilities, [], '');
+
+// Pass the session ID to the consumer repo
+const sessionId = capabilities['tvlabs:session_id'];
+```
+
+### Session Consumer (Repo B)
+
+```javascript
+import { remote } from 'webdriverio';
+import { TVLabsService } from '@tvlabs/wdio-service';
+
+const capabilities = { ... };
+const wdOpts = {
+  capabilities,
+  hostname: 'appium.tvlabs.ai',
+  port: 4723,
+};
+
+// sessionId received from Repo A
+const service = TVLabsService.fromSession(
+  sessionId,
+  { apiKey: process.env.TVLABS_API_KEY },
+  wdOpts
+);
+
+const driver = await remote(wdOpts);
+
+try {
+  // All telemetry methods work
+  const element = await driver.$('#my-button');
+  await element.click();
+
+  const requestId = service.lastRequestId();
+  const metadata = await service.requestMetadata(sessionId, requestId);
+  const session = await service.sessionMetadata(sessionId);
+} finally {
+  await driver.deleteSession();
+}
+```
+
+> **Note:** `lastRequestId()` is per-instance -- each repo tracks its own request IDs. The cross-repo join key is `sessionId`. Use `requestMetadata()` and `sessionMetadata()` for cross-repo telemetry queries.

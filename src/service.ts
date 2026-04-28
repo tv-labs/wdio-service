@@ -22,6 +22,8 @@ export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
   private metadataChannel: MetadataChannel | undefined;
+  private _sessionId: string | undefined;
+  private _rehydrated: boolean = false;
 
   constructor(
     private _options: TVLabsServiceOptions,
@@ -37,6 +39,86 @@ export default class TVLabsService implements Services.ServiceInstance {
     }
 
     this.log.info(`Instantiated TVLabsService v${getServiceVersion()}`);
+  }
+
+  /**
+   * Creates a TVLabsService instance bound to an existing session.
+   *
+   * Use this in a consumer repo that receives a `sessionId` from a session
+   * creator. The returned service supports `lastRequestId()`,
+   * `requestMetadata()`, and `sessionMetadata()` without calling
+   * `beforeSession()`.
+   *
+   * **Important:** `wdOpts` must be the same reference later passed to
+   * `remote()`. The factory mutates it to inject the authorization header,
+   * request-id tracking hook, and `tvlabs:session_id` capability.
+   *
+   * @param sessionId - The TV Labs session ID obtained from the session creator.
+   * @param options - Service options. Pass `validate: true` to eagerly verify the session exists.
+   * @param wdOpts - WebdriverIO remote options. Must be the same reference passed to `remote()`.
+   */
+  static fromSession(
+    sessionId: string,
+    options: TVLabsServiceOptions & { validate: true },
+    wdOpts: Options.WebdriverIO & { capabilities?: unknown },
+  ): Promise<TVLabsService>;
+  static fromSession(
+    sessionId: string,
+    options: TVLabsServiceOptions,
+    wdOpts: Options.WebdriverIO & { capabilities?: unknown },
+  ): TVLabsService;
+  static fromSession(
+    sessionId: string,
+    options: TVLabsServiceOptions,
+    wdOpts: Options.WebdriverIO & { capabilities?: unknown },
+  ): TVLabsService | Promise<TVLabsService> {
+    if (
+      !wdOpts.capabilities ||
+      typeof wdOpts.capabilities !== 'object' ||
+      Array.isArray(wdOpts.capabilities)
+    ) {
+      throw new SevereServiceError(
+        'wdOpts.capabilities must be a capabilities object. Multi-remote capabilities are not supported.',
+      );
+    }
+
+    const capabilities = wdOpts.capabilities as TVLabsCapabilities;
+    const service = new TVLabsService(
+      options,
+      capabilities as Capabilities.ResolvedTestrunnerCapabilities,
+      wdOpts as Options.WebdriverIO,
+    );
+
+    service._rehydrated = true;
+    service._sessionId = sessionId;
+    capabilities['tvlabs:session_id'] = sessionId;
+
+    if (options.validate) {
+      return getSessionMetadata(
+        {
+          baseUrl: service.apiBaseUrl(),
+          apiKey: service.apiKey(),
+          logLevel: service.logLevel(),
+        },
+        sessionId,
+      )
+        .then(() => service)
+        .catch((error) => {
+          throw new SevereServiceError(
+            `Cannot rehydrate: session ${sessionId} not found or inaccessible. ${error instanceof Error ? error.message : String(error)}`,
+          );
+        });
+    }
+
+    return service;
+  }
+
+  /**
+   * Returns the session ID bound via `fromSession()`, or `undefined`
+   * for service instances created through the standard constructor.
+   */
+  get sessionId(): string | undefined {
+    return this._sessionId;
   }
 
   lastRequestId(): string | undefined {
@@ -115,6 +197,12 @@ export default class TVLabsService implements Services.ServiceInstance {
     _specs: string[],
     _cid: string,
   ) {
+    if (this._rehydrated) {
+      throw new SevereServiceError(
+        'beforeSession() is not valid on a rehydrated service. The session was supplied to fromSession() and should not be recreated.',
+      );
+    }
+
     try {
       const buildPath = this.buildPath();
 
