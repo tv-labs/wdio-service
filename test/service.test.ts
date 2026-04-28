@@ -765,6 +765,43 @@ describe('TVLabsService', () => {
     });
   });
 
+  describe('disconnect', () => {
+    it('is a no-op when no metadata channel was opened', async () => {
+      const service = new TVLabsService(
+        { apiKey: 'my-api-key' },
+        {},
+        {},
+      );
+
+      await expect(service.disconnect()).resolves.toBeUndefined();
+      expect(fakeMetadataChannel.disconnect).not.toHaveBeenCalled();
+    });
+
+    it('closes the metadata channel after requestMetadata opened it', async () => {
+      const service = new TVLabsService(
+        { apiKey: 'my-api-key' },
+        {},
+        {},
+      );
+      const sessionId = randomUUID();
+      const requestId = randomUUID();
+
+      fakeMetadataChannel.getRequestMetadata.mockResolvedValue({
+        [requestId]: {},
+      });
+      fakeMetadataChannel.disconnect.mockResolvedValue(undefined);
+
+      await service.requestMetadata(sessionId, requestId);
+      await service.disconnect();
+
+      expect(fakeMetadataChannel.disconnect).toHaveBeenCalledTimes(1);
+
+      // Subsequent disconnect calls are no-ops
+      await service.disconnect();
+      expect(fakeMetadataChannel.disconnect).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('fromSession', () => {
     it('returns a TVLabsService instance synchronously', () => {
       const sessionId = randomUUID();
@@ -777,7 +814,7 @@ describe('TVLabsService', () => {
       expect(service).toBeInstanceOf(TVLabsService);
     });
 
-    it('sets tvlabs:session_id on the capabilities', () => {
+    it('does not mutate tvlabs:session_id on the capabilities', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
@@ -785,7 +822,7 @@ describe('TVLabsService', () => {
 
       TVLabsService.fromSession(sessionId, options, wdOpts);
 
-      expect(capabilities['tvlabs:session_id']).toBe(sessionId);
+      expect(capabilities['tvlabs:session_id']).toBeUndefined();
     });
 
     it('installs transformRequest on wdOpts for request-id tracking', () => {
@@ -846,7 +883,7 @@ describe('TVLabsService', () => {
       expect(secondRequestId).not.toBe(firstRequestId);
     });
 
-    it('sessionId getter returns the bound session ID', () => {
+    it('appiumSessionId getter returns the bound Appium session ID', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
@@ -854,17 +891,17 @@ describe('TVLabsService', () => {
 
       const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
-      expect(service.sessionId).toBe(sessionId);
+      expect(service.appiumSessionId).toBe(sessionId);
     });
 
-    it('sessionId getter returns undefined for classic instances', () => {
+    it('appiumSessionId getter returns undefined for classic instances', () => {
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
       const config: Options.WebdriverIO = {};
 
       const service = new TVLabsService(options, capabilities, config);
 
-      expect(service.sessionId).toBeUndefined();
+      expect(service.appiumSessionId).toBeUndefined();
     });
 
     it('beforeSession throws on a rehydrated instance', async () => {
@@ -976,7 +1013,7 @@ describe('TVLabsService', () => {
 
         const service = await result;
         expect(service).toBeInstanceOf(TVLabsService);
-        expect(service.sessionId).toBe(sessionId);
+        expect(service.appiumSessionId).toBe(sessionId);
       });
 
       it('calls getSessionMetadata to validate the session', async () => {

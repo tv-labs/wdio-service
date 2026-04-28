@@ -73,7 +73,7 @@ describe('CJS Integration Tests', () => {
       expect(service).toBeInstanceOf(TVLabsService);
     });
 
-    it('should set tvlabs:session_id on capabilities', () => {
+    it('should not mutate tvlabs:session_id on capabilities', () => {
       const capabilities = {};
       const wdOpts = { capabilities, logLevel: 'silent' };
 
@@ -83,7 +83,7 @@ describe('CJS Integration Tests', () => {
         wdOpts,
       );
 
-      expect(capabilities['tvlabs:session_id']).toBe('fake-session-id');
+      expect(capabilities['tvlabs:session_id']).toBeUndefined();
     });
 
     it('should install transformRequest on wdOpts', () => {
@@ -99,7 +99,7 @@ describe('CJS Integration Tests', () => {
       expect(typeof wdOpts.transformRequest).toBe('function');
     });
 
-    it('should expose lastRequestId, requestMetadata, sessionMetadata, and sessionId', () => {
+    it('should expose lastRequestId, requestMetadata, sessionMetadata, and appiumSessionId', () => {
       const capabilities = {};
       const wdOpts = { capabilities, logLevel: 'silent' };
 
@@ -112,7 +112,7 @@ describe('CJS Integration Tests', () => {
       expect(typeof service.lastRequestId).toBe('function');
       expect(typeof service.requestMetadata).toBe('function');
       expect(typeof service.sessionMetadata).toBe('function');
-      expect(service.sessionId).toBe('fake-session-id');
+      expect(service.appiumSessionId).toBe('fake-session-id');
     });
 
     it('should inject Authorization header on wdOpts', () => {

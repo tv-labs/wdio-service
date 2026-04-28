@@ -22,7 +22,7 @@ export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
   private metadataChannel: MetadataChannel | undefined;
-  private _sessionId: string | undefined;
+  private _appiumSessionId: string | undefined;
   private _rehydrated: boolean = false;
 
   constructor(
@@ -42,33 +42,34 @@ export default class TVLabsService implements Services.ServiceInstance {
   }
 
   /**
-   * Creates a TVLabsService instance bound to an existing session.
+   * Creates a TVLabsService instance bound to an existing Appium session.
    *
-   * Use this in a consumer repo that receives a `sessionId` from a session
-   * creator. The returned service supports `lastRequestId()`,
-   * `requestMetadata()`, and `sessionMetadata()` without calling
-   * `beforeSession()`.
+   * Use this when you have an Appium session ID (e.g. from `driver.sessionId`
+   * after a previous `remote()` call, possibly in another process) and want
+   * to attach to it via `attach({ sessionId, ...wdOpts })`. The returned
+   * service supports `lastRequestId()`, `requestMetadata()`, and
+   * `sessionMetadata()` without calling `beforeSession()`.
    *
    * **Important:** `wdOpts` must be the same reference later passed to
-   * `remote()`. The factory mutates it to inject the authorization header,
-   * request-id tracking hook, and `tvlabs:session_id` capability.
+   * `attach()`. The factory mutates it to inject the authorization header
+   * and the request-id tracking hook.
    *
-   * @param sessionId - The TV Labs session ID obtained from the session creator.
+   * @param appiumSessionId - The Appium session ID returned by the proxy on the original `POST /session`. This is the value of `driver.sessionId` after `remote()` succeeded.
    * @param options - Service options. Pass `validate: true` to eagerly verify the session exists.
-   * @param wdOpts - WebdriverIO remote options. Must be the same reference passed to `remote()`.
+   * @param wdOpts - WebdriverIO remote options. Must be the same reference passed to `attach()`.
    */
   static fromSession(
-    sessionId: string,
+    appiumSessionId: string,
     options: TVLabsServiceOptions & { validate: true },
     wdOpts: Options.WebdriverIO & { capabilities?: unknown },
   ): Promise<TVLabsService>;
   static fromSession(
-    sessionId: string,
+    appiumSessionId: string,
     options: TVLabsServiceOptions,
     wdOpts: Options.WebdriverIO & { capabilities?: unknown },
   ): TVLabsService;
   static fromSession(
-    sessionId: string,
+    appiumSessionId: string,
     options: TVLabsServiceOptions,
     wdOpts: Options.WebdriverIO & { capabilities?: unknown },
   ): TVLabsService | Promise<TVLabsService> {
@@ -90,8 +91,7 @@ export default class TVLabsService implements Services.ServiceInstance {
     );
 
     service._rehydrated = true;
-    service._sessionId = sessionId;
-    capabilities['tvlabs:session_id'] = sessionId;
+    service._appiumSessionId = appiumSessionId;
 
     if (options.validate) {
       return getSessionMetadata(
@@ -100,12 +100,12 @@ export default class TVLabsService implements Services.ServiceInstance {
           apiKey: service.apiKey(),
           logLevel: service.logLevel(),
         },
-        sessionId,
+        appiumSessionId,
       )
         .then(() => service)
         .catch((error) => {
           throw new SevereServiceError(
-            `Cannot rehydrate: session ${sessionId} not found or inaccessible. ${error instanceof Error ? error.message : String(error)}`,
+            `Cannot rehydrate: session ${appiumSessionId} not found or inaccessible. ${error instanceof Error ? error.message : String(error)}`,
           );
         });
     }
@@ -114,11 +114,11 @@ export default class TVLabsService implements Services.ServiceInstance {
   }
 
   /**
-   * Returns the session ID bound via `fromSession()`, or `undefined`
+   * Returns the Appium session ID bound via `fromSession()`, or `undefined`
    * for service instances created through the standard constructor.
    */
-  get sessionId(): string | undefined {
-    return this._sessionId;
+  get appiumSessionId(): string | undefined {
+    return this._appiumSessionId;
   }
 
   lastRequestId(): string | undefined {
@@ -170,6 +170,18 @@ export default class TVLabsService implements Services.ServiceInstance {
       },
       sessionId,
     );
+  }
+
+  /**
+   * Closes any long-lived connections held by the service (currently the
+   * metadata channel WebSocket). Safe to call when no channel was opened.
+   * Call this when you are finished with the service so the process can exit.
+   */
+  async disconnect(): Promise<void> {
+    if (this.metadataChannel) {
+      await this.metadataChannel.disconnect();
+      this.metadataChannel = undefined;
+    }
   }
 
   onPrepare(

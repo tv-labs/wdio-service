@@ -151,7 +151,7 @@ run();
 - **Type:** `boolean`
 - **Required:** No
 - **Default:** `false`
-- **Description:** Only used with `TVLabsService.fromSession()`. When `true`, the factory eagerly verifies the session exists by calling the TV Labs API before returning the service instance. This makes `fromSession()` return a `Promise<TVLabsService>` instead of a synchronous `TVLabsService`. If the session is not found, a `SevereServiceError` is thrown.
+- **Description:** Only used with `TVLabsService.fromSession()`. When `true`, the factory eagerly verifies the Appium session exists by calling the TV Labs API before returning the service instance. This makes `fromSession()` return a `Promise<TVLabsService>` instead of a synchronous `TVLabsService`. If the session is not found, a `SevereServiceError` is thrown.
 
 ## Methods
 
@@ -240,6 +240,11 @@ const multiMetadata = await service.requestMetadata("appium-session-id-1234"[
 console.log('Multiple requests metadata:', multiMetadata);
 ```
 
+### `disconnect()`
+
+- **Returns:** `Promise<void>`
+- **Description:** Closes any long-lived connections held by the service (currently the metadata channel WebSocket opened by `requestMetadata()`). Call this when you are finished with the service so the process can exit. Safe to call when no channel was opened, and safe to call multiple times.
+
 ### `sessionMetadata()`
 
 - **Parameters:** `appiumSessionId: string`
@@ -247,6 +252,8 @@ console.log('Multiple requests metadata:', multiMetadata);
 - **Description:** Fetches metadata for a session by Appium session ID from the TV Labs platform.
 
 > **Note:** Partial metadata will be available immediately after session creation. Some session metadata such as recording end time, session end time, and session duration are added asynchronously on the TV Labs platform after the session ends. Before the session ends, these fields will be null.
+
+> **Tip:** The response includes both IDs — `data.id` is the TV Labs session ID (useful for deep-linking into `https://tvlabs.ai/app/sessions/:id`) and `data.appium.session_id` is the Appium session ID. Consumers that only have the Appium session ID can resolve the TV Labs session ID from this response.
 
 #### Example
 
@@ -289,43 +296,43 @@ try {
 
 ### `TVLabsService.fromSession()`
 
-- **Parameters:** `sessionId: string, options: TVLabsServiceOptions, wdOpts: Options.WebdriverIO`
+- **Parameters:** `appiumSessionId: string, options: TVLabsServiceOptions, wdOpts: Options.WebdriverIO`
 - **Returns:** `TVLabsService` (or `Promise<TVLabsService>` when `validate: true`)
-- **Description:** Creates a `TVLabsService` instance bound to an existing session without calling `beforeSession()`. Use this in a consumer repo that receives a `sessionId` from a session creator.
+- **Description:** Creates a `TVLabsService` instance bound to an existing Appium session without calling `beforeSession()`. Use this when you have an Appium session ID (the value of `driver.sessionId` after a previous `remote()` call) and want to attach to that session via WebdriverIO's `attach()`.
 
 The factory:
 
-- Sets `tvlabs:session_id` on `wdOpts.capabilities` so `remote(wdOpts)` attaches to the existing session.
 - Injects the `Authorization` header on `wdOpts`.
 - Installs the `x-request-id` tracking hook on `wdOpts` (unless `attachRequestId: false`), so `lastRequestId()` works locally.
+- Records the Appium session ID for use by `appiumSessionId`, `requestMetadata()`, and `sessionMetadata()`.
 
-> **Important:** `wdOpts` must be the same reference later passed to `remote()`.
+> **Important:** `wdOpts` must be the same reference later passed to `attach()`.
 
 > **Note:** Calling `beforeSession()` on a rehydrated service throws a `SevereServiceError` to prevent accidentally creating a duplicate session.
 
 #### Example
 
 ```javascript
-import { remote } from 'webdriverio';
+import { attach } from 'webdriverio';
 import { TVLabsService } from '@tvlabs/wdio-service';
 
-const capabilities = { ... };
 const wdOpts = {
-  capabilities,
+  capabilities: {},
   hostname: 'appium.tvlabs.ai',
   port: 4723,
 };
 
-// sessionId is received from the session creator (e.g. Repo A)
-const sessionId = process.env.SESSION_ID;
+// appiumSessionId is the value of driver.sessionId from the original remote()
+// call, handed off via env var, queue message, etc.
+const appiumSessionId = process.env.APPIUM_SESSION_ID;
 
 const service = TVLabsService.fromSession(
-  sessionId,
+  appiumSessionId,
   { apiKey: process.env.TVLABS_API_KEY },
   wdOpts
 );
 
-const driver = await remote(wdOpts);
+const driver = await attach({ sessionId: appiumSessionId, ...wdOpts, options: wdOpts });
 
 try {
   const element = await driver.$('#my-button');
@@ -335,10 +342,10 @@ try {
   const requestId = service.lastRequestId();
 
   // Telemetry queries work without beforeSession()
-  const metadata = await service.requestMetadata(sessionId, requestId);
+  const metadata = await service.requestMetadata(appiumSessionId, requestId);
   console.log('Request metadata:', metadata);
 } finally {
-  await driver.deleteSession();
+  // The consumer typically should NOT delete a session it did not create.
 }
 ```
 
@@ -348,21 +355,23 @@ try {
 // With validate: true, fromSession returns a Promise and verifies
 // the session exists before returning the service instance.
 const service = await TVLabsService.fromSession(
-  sessionId,
+  appiumSessionId,
   { apiKey: process.env.TVLABS_API_KEY, validate: true },
   wdOpts,
 );
 ```
 
-### `sessionId`
+### `appiumSessionId`
 
 - **Type:** getter
 - **Returns:** `string | undefined`
-- **Description:** Returns the session ID bound via `fromSession()`, or `undefined` for service instances created through the standard constructor.
+- **Description:** Returns the Appium session ID bound via `fromSession()`, or `undefined` for service instances created through the standard constructor.
 
 ## Cross-Repo Session Reuse
 
 In a distributed test setup where session creation and session usage happen in different repos, you can use `fromSession()` to reconstruct service context in the consumer repo.
+
+The portable join key is the **Appium session ID** -- the value of `driver.sessionId` after the original `remote()` call. Both `requestMetadata()` and `sessionMetadata()` accept this ID, and `attach()` uses it to bind to the existing session.
 
 ### Session Creator (Repo A)
 
@@ -384,32 +393,32 @@ const service = new TVLabsService(
 );
 
 await service.beforeSession(wdOpts, capabilities, [], '');
+const driver = await remote(wdOpts);
 
-// Pass the session ID to the consumer repo
-const sessionId = capabilities['tvlabs:session_id'];
+// Hand off the Appium session ID to the consumer repo
+const appiumSessionId = driver.sessionId;
 ```
 
 ### Session Consumer (Repo B)
 
 ```javascript
-import { remote } from 'webdriverio';
+import { attach } from 'webdriverio';
 import { TVLabsService } from '@tvlabs/wdio-service';
 
-const capabilities = { ... };
 const wdOpts = {
-  capabilities,
+  capabilities: {},
   hostname: 'appium.tvlabs.ai',
   port: 4723,
 };
 
-// sessionId received from Repo A
+// appiumSessionId received from Repo A
 const service = TVLabsService.fromSession(
-  sessionId,
+  appiumSessionId,
   { apiKey: process.env.TVLABS_API_KEY },
   wdOpts
 );
 
-const driver = await remote(wdOpts);
+const driver = await attach({ sessionId: appiumSessionId, ...wdOpts, options: wdOpts });
 
 try {
   // All telemetry methods work
@@ -417,11 +426,11 @@ try {
   await element.click();
 
   const requestId = service.lastRequestId();
-  const metadata = await service.requestMetadata(sessionId, requestId);
-  const session = await service.sessionMetadata(sessionId);
+  const metadata = await service.requestMetadata(appiumSessionId, requestId);
+  const session = await service.sessionMetadata(appiumSessionId);
 } finally {
-  await driver.deleteSession();
+  // Don't deleteSession unless this consumer owns the session lifecycle.
 }
 ```
 
-> **Note:** `lastRequestId()` is per-instance -- each repo tracks its own request IDs. The cross-repo join key is `sessionId`. Use `requestMetadata()` and `sessionMetadata()` for cross-repo telemetry queries.
+> **Note:** `lastRequestId()` is per-instance -- each repo tracks its own request IDs. The cross-repo join key is the Appium session ID. Use `requestMetadata()` and `sessionMetadata()` for cross-repo telemetry queries.
