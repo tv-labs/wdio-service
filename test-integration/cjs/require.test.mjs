@@ -99,7 +99,7 @@ describe('CJS Integration Tests', () => {
       expect(typeof wdOpts.transformRequest).toBe('function');
     });
 
-    it('should expose lastRequestId, requestMetadata, sessionMetadata, and appiumSessionId', () => {
+    it('should expose lastRequestId, requestMetadata, sessionMetadata, and rehydratedSessionId', () => {
       const capabilities = {};
       const wdOpts = { capabilities, logLevel: 'silent' };
 
@@ -112,7 +112,7 @@ describe('CJS Integration Tests', () => {
       expect(typeof service.lastRequestId).toBe('function');
       expect(typeof service.requestMetadata).toBe('function');
       expect(typeof service.sessionMetadata).toBe('function');
-      expect(service.appiumSessionId).toBe('fake-session-id');
+      expect(service.rehydratedSessionId).toBe('fake-session-id');
     });
 
     it('should inject Authorization header on wdOpts', () => {

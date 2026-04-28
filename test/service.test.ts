@@ -883,7 +883,7 @@ describe('TVLabsService', () => {
 
       const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
-      expect(service.appiumSessionId).toBe(sessionId);
+      expect(service.rehydratedSessionId).toBe(sessionId);
     });
 
     it('appiumSessionId getter returns undefined for classic instances', () => {
@@ -893,7 +893,7 @@ describe('TVLabsService', () => {
 
       const service = new TVLabsService(options, capabilities, config);
 
-      expect(service.appiumSessionId).toBeUndefined();
+      expect(service.rehydratedSessionId).toBeUndefined();
     });
 
     it('beforeSession throws on a rehydrated instance', async () => {

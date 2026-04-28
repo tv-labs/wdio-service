@@ -22,8 +22,7 @@ export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
   private metadataChannel: MetadataChannel | undefined;
-  private _appiumSessionId: string | undefined;
-  private _rehydrated: boolean = false;
+  private _rehydratedSessionId: string | undefined;
 
   constructor(
     private _options: TVLabsServiceOptions,
@@ -85,11 +84,7 @@ export default class TVLabsService implements Services.ServiceInstance {
       wdOpts as Options.WebdriverIO,
     );
 
-    // _rehydrated and _appiumSessionId are always set together by this factory.
-    // Do not set either independently — the beforeSession() guard and the
-    // appiumSessionId getter both rely on them being in sync.
-    service._rehydrated = true;
-    service._appiumSessionId = appiumSessionId;
+    service._rehydratedSessionId = appiumSessionId;
 
     return service;
   }
@@ -98,8 +93,8 @@ export default class TVLabsService implements Services.ServiceInstance {
    * Returns the Appium session ID bound via `fromSession()`, or `undefined`
    * for service instances created through the standard constructor.
    */
-  get appiumSessionId(): string | undefined {
-    return this._appiumSessionId;
+  get rehydratedSessionId(): string | undefined {
+    return this._rehydratedSessionId;
   }
 
   lastRequestId(): string | undefined {
@@ -194,7 +189,7 @@ export default class TVLabsService implements Services.ServiceInstance {
     _specs: string[],
     _cid: string,
   ) {
-    if (this._rehydrated) {
+    if (this._rehydratedSessionId) {
       throw new SevereServiceError(
         'beforeSession() is not valid on a rehydrated service. The session was supplied to fromSession() and should not be recreated.',
       );
