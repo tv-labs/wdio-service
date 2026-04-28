@@ -1007,7 +1007,9 @@ describe('TVLabsService', () => {
 
       const userHeader = 'x-my-header';
       const userHeaderValue = 'my-value';
-      const wdOpts: Options.WebdriverIO & { transformRequest?: (r: RequestInit) => RequestInit } = {
+      const wdOpts: Options.WebdriverIO & {
+        transformRequest?: (r: RequestInit) => RequestInit;
+      } = {
         capabilities,
         transformRequest: (requestOptions: RequestInit) => ({
           ...requestOptions,
@@ -1021,7 +1023,9 @@ describe('TVLabsService', () => {
       const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
       // Invoke the installed transformRequest hook
-      const result = wdOpts.transformRequest!({} as RequestInit) as { headers: Record<string, string> };
+      const result = wdOpts.transformRequest!({} as RequestInit) as {
+        headers: Record<string, string>;
+      };
 
       // The user's header must be present (user's transformRequest was called)
       expect(result.headers[userHeader]).toBe(userHeaderValue);
@@ -1032,7 +1036,6 @@ describe('TVLabsService', () => {
       // lastRequestId() must match what was injected
       expect(service.lastRequestId()).toBe(result.headers['x-request-id']);
     });
-
   });
 });
 
