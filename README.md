@@ -54,9 +54,9 @@ export const config = {
 };
 ```
 
-### WebdriverIO Remote
+### Standalone (remote)
 
-To use this with WebdriverIO remote but without the test runner, call the beforeSession hook before instantiating the remote.
+To use this with WebdriverIO remote but without the test runner, call `beforeSession()` before instantiating the remote.
 
 ```javascript
 import { remote } from 'webdriverio';
@@ -71,20 +71,14 @@ async function run() {
     port: 4723
   };
 
-  const serviceOpts = {
-    apiKey: process.env.TVLABS_API_TOKEN,
-  }
+  // NOTE: wdOpts must be the same reference passed to remote()
+  const service = new TVLabsService(
+    { apiKey: process.env.TVLABS_API_KEY },
+    capabilities,
+    wdOpts,
+  );
 
-  // NOTE: it is important to make sure that
-  // the wdOpts passed here are the same reference
-  // as the one passed to remote()
-  const service = new TVLabsService(serviceOpts, capabilities, wdOpts)
-
-  // The TV Labs service does not use specs or a cid, pass default values.
-  const cid = ""
-  const specs = []
-
-  await service.beforeSession(wdOpts, capabilities, specs, cid)
+  await service.beforeSession(wdOpts, capabilities, [], '');
 
   const driver = await remote(wdOpts);
 
@@ -97,6 +91,78 @@ async function run() {
 
 run();
 ```
+
+### Attaching to an Existing Session
+
+WebdriverIO's [`attach()`](https://webdriver.io/docs/api/modules#attachoptions) binds a driver to a session that was created earlier — possibly by a different process. Use `TVLabsService.fromSession()` alongside `attach()` to keep TV Labs telemetry (`lastRequestId()`, `requestMetadata()`, `sessionMetadata()`) working for the attaching driver, without recreating the session.
+
+The portable handle is the **Appium session ID** — the value of `driver.sessionId` after the original `remote()` call. Pass it through whatever channel fits your setup (env var, fixture, queue message, file).
+
+#### Creating the session
+
+```javascript
+import { remote } from 'webdriverio';
+import { TVLabsService } from '@tvlabs/wdio-service';
+
+const capabilities = { ... };
+const wdOpts = {
+  capabilities,
+  hostname: 'appium.tvlabs.ai',
+  port: 4723,
+};
+
+const service = new TVLabsService(
+  { apiKey: process.env.TVLABS_API_KEY },
+  capabilities,
+  wdOpts,
+);
+
+await service.beforeSession(wdOpts, capabilities, [], '');
+const driver = await remote(wdOpts);
+
+// Hand off driver.sessionId to wherever the attaching process will pick it up
+const appiumSessionId = driver.sessionId;
+```
+
+#### Attaching to the session
+
+```javascript
+import { attach } from 'webdriverio';
+import { TVLabsService } from '@tvlabs/wdio-service';
+
+const wdOpts = {
+  capabilities: {},
+  hostname: 'appium.tvlabs.ai',
+  port: 4723,
+};
+
+// appiumSessionId received from the session-creating process
+const service = TVLabsService.fromSession(
+  appiumSessionId,
+  { apiKey: process.env.TVLABS_API_KEY },
+  wdOpts,
+);
+
+const driver = await attach({
+  sessionId: appiumSessionId,
+  ...wdOpts,
+  options: wdOpts,
+});
+
+try {
+  const element = await driver.$('#my-button');
+  await element.click();
+
+  const requestId = service.lastRequestId();
+  const metadata = await service.requestMetadata(appiumSessionId, requestId);
+  const session = await service.sessionMetadata(appiumSessionId);
+} finally {
+  await service.disconnect();
+  // Only delete the session if this process owns its lifecycle.
+}
+```
+
+> **Note:** `lastRequestId()` is per-instance — each `TVLabsService` tracks request IDs that flow through its own `transformRequest` hook. Use `requestMetadata()` and `sessionMetadata()` (both keyed by Appium session ID) for telemetry that needs to span instances.
 
 ## Options
 
@@ -151,39 +217,15 @@ run();
 ### `lastRequestId()`
 
 - **Returns:** `string | undefined`
-- **Description:** Returns the last request ID that was attached to a request made to the TV Labs platform. This is useful for correlating client-side logs with server-side logs. Returns `undefined` if no request has been made yet or if `attachRequestId` is set to `false`.
-
-#### Example
-
-```javascript
-import { remote } from 'webdriverio';
-import { TVLabsService } from '@tvlabs/wdio-service';
-
-const capabilities = { ... };
-const wdOpts = { ... };
-
-const service = new TVLabsService(
-  { apiKey: process.env.TVLABS_API_KEY },
-  capabilities,
-  wdOpts
-);
-
-await service.beforeSession(wdOpts, capabilities, [], '');
-
-const driver = await remote(wdOpts);
-
-// Get the last request ID
-const requestId = service.lastRequestId();
-console.log(`Last request ID: ${requestId}`);
-```
+- **Description:** Returns the last request ID attached to a request made to the TV Labs platform. Useful for correlating client-side logs with server-side logs. Returns `undefined` if no request has been made yet or if `attachRequestId` is `false`.
 
 ### `requestMetadata()`
 
 - **Parameters:** `appiumSessionId: string, requestIds: string | string[]`
 - **Returns:** `Promise<TVLabsRequestMetadata | TVLabsRequestMetadataResponse>`
-- **Description:** Fetches metadata for one or more Appium request IDs from the TV Labs platform. If a single request ID is provided, returns the metadata for that request. If an array of request IDs is provided, returns a map where keys are request IDs and values are their corresponding metadata.
+- **Description:** Fetches metadata for one or more request IDs from the TV Labs platform. Pass a single request ID to get its metadata directly; pass an array to get a map keyed by request ID.
 
-> **Note:** Request metadata is processed asynchronously on the TV Labs platform. To ensure metadata is available, it is recommended to fetch request metadata a few seconds after the request, or after the session has ended.
+> **Note:** Request metadata is processed asynchronously on the TV Labs platform. Fetch after the session ends, or wait a few seconds after the request, to ensure the data is available.
 
 #### Example
 
@@ -197,7 +239,7 @@ const wdOpts = { ... };
 const service = new TVLabsService(
   { apiKey: process.env.TVLABS_API_KEY },
   capabilities,
-  wdOpts
+  wdOpts,
 );
 
 await service.beforeSession(wdOpts, capabilities, [], '');
@@ -206,30 +248,25 @@ const driver = await remote(wdOpts);
 let requestId;
 
 try {
-  // Perform some actions that generate requests
   const element = await driver.$('#my-button');
   await element.click();
-
-  // Get the request ID from the click
   requestId = service.lastRequestId();
-  console.log(`Request ID: ${requestId}`);
 } finally {
   await driver.deleteSession();
 }
 
-// Fetch metadata after session ends (recommended)
+// Single request
 if (requestId) {
   const metadata = await service.requestMetadata(driver.sessionId, requestId);
   console.log('Request metadata:', metadata);
 }
 
-// Fetch metadata for multiple requests
-const multiMetadata = await service.requestMetadata("appium-session-id-1234"[
+// Multiple requests
+const multiMetadata = await service.requestMetadata(driver.sessionId, [
   'request-id-123',
   'request-id-456',
-  'request-id-789'
+  'request-id-789',
 ]);
-
 console.log('Multiple requests metadata:', multiMetadata);
 ```
 
@@ -239,7 +276,9 @@ console.log('Multiple requests metadata:', multiMetadata);
 - **Returns:** `Promise<TVLabsSessionMetadataResponse>`
 - **Description:** Fetches metadata for a session by Appium session ID from the TV Labs platform.
 
-> **Note:** Partial metadata will be available immediately after session creation. Some session metadata such as recording end time, session end time, and session duration are added asynchronously on the TV Labs platform after the session ends. Before the session ends, these fields will be null.
+> **Note:** Partial metadata will be available immediately after session creation. Fields such as recording end time, session end time, and session duration are populated asynchronously after the session ends — they will be `null` until then.
+
+> **Tip:** The response includes both IDs — `data.id` is the TV Labs session ID (useful for deep-linking into `https://tvlabs.ai/app/sessions/:id`) and `data.appium.session_id` is the Appium session ID. Consumers that only have the Appium session ID can resolve the TV Labs session ID from this response.
 
 #### Example
 
@@ -253,7 +292,7 @@ const wdOpts = { ... };
 const service = new TVLabsService(
   { apiKey: process.env.TVLABS_API_KEY },
   capabilities,
-  wdOpts
+  wdOpts,
 );
 
 await service.beforeSession(wdOpts, capabilities, [], '');
@@ -262,20 +301,53 @@ const driver = await remote(wdOpts);
 const { sessionId } = driver;
 
 try {
-  const sessionMetadata = await service.sessionMetadata(sessionId);
-
-  const { data:
-    {
-      device: {
-        make: { display_name: make },
-        model: { display_name: model, year }
-      },
-      recording: { start_time }
-    }
-  } = sessionMetadata;
-
-  console.log(`Recording on ${year} ${make} ${model} started at ${start_time}`);
+  // ...
 } finally {
   await driver.deleteSession();
 }
+
+const sessionMetadata = await service.sessionMetadata(sessionId);
+
+const { data: {
+  device: {
+    make: { display_name: make },
+    model: { display_name: model, year },
+  },
+  recording: { start_time },
+} } = sessionMetadata;
+
+console.log(`Recording on ${year} ${make} ${model} started at ${start_time}`);
 ```
+
+### `disconnect()`
+
+- **Returns:** `Promise<void>`
+- **Description:** Closes any long-lived connections held by the service (currently the metadata channel WebSocket opened by `requestMetadata()`). Call this when you are finished with the service so the process can exit. Safe to call when no channel was opened, and safe to call multiple times.
+
+> **Note:** Await all in-flight `requestMetadata()` calls before calling `disconnect()`. Tearing down the metadata channel while a request is pending will cause that call to reject.
+
+## Static Factory
+
+### `TVLabsService.fromSession()`
+
+- **Parameters:** `appiumSessionId: string, options: TVLabsServiceOptions, wdOpts: Options.WebdriverIO`
+- **Returns:** `TVLabsService`
+- **Description:** Creates a `TVLabsService` instance bound to an existing Appium session without calling `beforeSession()`. Use this when you have an Appium session ID (the value of `driver.sessionId` after a previous `remote()` call) and want to attach to that session via WebdriverIO's `attach()`.
+
+The factory:
+
+- Injects the `Authorization` header on `wdOpts`.
+- Installs the `x-request-id` tracking hook on `wdOpts` (unless `attachRequestId: false`), so `lastRequestId()` works on the attached driver.
+- Records the Appium session ID for use by `appiumSessionId`, `requestMetadata()`, and `sessionMetadata()`.
+
+> **Important:** `wdOpts` must be the same reference later passed to `attach()`.
+
+> **Note:** Calling `beforeSession()` on a service created via `fromSession()` throws a `SevereServiceError` to prevent accidentally creating a duplicate session.
+
+> **Tip:** To verify the session exists before using it, call `await service.sessionMetadata(appiumSessionId)` immediately after construction. It throws if the session is not found or the API key cannot access it.
+
+### `appiumSessionId`
+
+- **Type:** getter
+- **Returns:** `string | undefined`
+- **Description:** Returns the Appium session ID bound via `fromSession()`, or `undefined` for service instances created through the standard constructor.

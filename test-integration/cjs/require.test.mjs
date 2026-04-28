@@ -55,6 +55,80 @@ describe('CJS Integration Tests', () => {
     expect(typeof service.requestMetadata).toBe('function');
   });
 
+  describe('fromSession', () => {
+    it('should have a static fromSession method', () => {
+      expect(typeof TVLabsService.fromSession).toBe('function');
+    });
+
+    it('should return a TVLabsService instance', () => {
+      const capabilities = {};
+      const wdOpts = { capabilities, logLevel: 'silent' };
+
+      const service = TVLabsService.fromSession(
+        'fake-session-id',
+        { apiKey: 'test-key' },
+        wdOpts,
+      );
+
+      expect(service).toBeInstanceOf(TVLabsService);
+    });
+
+    it('should not mutate tvlabs:session_id on capabilities', () => {
+      const capabilities = {};
+      const wdOpts = { capabilities, logLevel: 'silent' };
+
+      TVLabsService.fromSession(
+        'fake-session-id',
+        { apiKey: 'test-key' },
+        wdOpts,
+      );
+
+      expect(capabilities['tvlabs:session_id']).toBeUndefined();
+    });
+
+    it('should install transformRequest on wdOpts', () => {
+      const capabilities = {};
+      const wdOpts = { capabilities, logLevel: 'silent' };
+
+      TVLabsService.fromSession(
+        'fake-session-id',
+        { apiKey: 'test-key' },
+        wdOpts,
+      );
+
+      expect(typeof wdOpts.transformRequest).toBe('function');
+    });
+
+    it('should expose lastRequestId, requestMetadata, sessionMetadata, and rehydratedSessionId', () => {
+      const capabilities = {};
+      const wdOpts = { capabilities, logLevel: 'silent' };
+
+      const service = TVLabsService.fromSession(
+        'fake-session-id',
+        { apiKey: 'test-key' },
+        wdOpts,
+      );
+
+      expect(typeof service.lastRequestId).toBe('function');
+      expect(typeof service.requestMetadata).toBe('function');
+      expect(typeof service.sessionMetadata).toBe('function');
+      expect(service.rehydratedSessionId).toBe('fake-session-id');
+    });
+
+    it('should inject Authorization header on wdOpts', () => {
+      const capabilities = {};
+      const wdOpts = { capabilities, logLevel: 'silent' };
+
+      TVLabsService.fromSession(
+        'fake-session-id',
+        { apiKey: 'test-key' },
+        wdOpts,
+      );
+
+      expect(wdOpts.headers?.Authorization).toBe('Bearer test-key');
+    });
+  });
+
   describe('Authorization header injection', () => {
     it('should inject Authorization header when not present', () => {
       const config = {};

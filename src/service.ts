@@ -22,6 +22,7 @@ export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
   private metadataChannel: MetadataChannel | undefined;
+  private _rehydratedSessionId: string | undefined;
 
   constructor(
     private _options: TVLabsServiceOptions,
@@ -37,6 +38,63 @@ export default class TVLabsService implements Services.ServiceInstance {
     }
 
     this.log.info(`Instantiated TVLabsService v${getServiceVersion()}`);
+  }
+
+  /**
+   * Creates a TVLabsService instance bound to an existing Appium session.
+   *
+   * Use this when you have an Appium session ID (e.g. from `driver.sessionId`
+   * after a previous `remote()` call, possibly in another process) and want
+   * to attach to it via `attach({ sessionId, ...wdOpts })`. The returned
+   * service supports `lastRequestId()`, `requestMetadata()`, and
+   * `sessionMetadata()` without calling `beforeSession()`.
+   *
+   * **Important:** `wdOpts` must be the same reference later passed to
+   * `attach()`. The factory mutates it to inject the authorization header
+   * and the request-id tracking hook.
+   *
+   * To verify the session exists before using it, call
+   * `await service.sessionMetadata(appiumSessionId)` immediately after
+   * construction. It throws if the session is not found or the API key
+   * cannot access it.
+   *
+   * @param appiumSessionId - The Appium session ID returned by the proxy on the original `POST /session`. This is the value of `driver.sessionId` after `remote()` succeeded.
+   * @param options - Service options.
+   * @param wdOpts - WebdriverIO remote options. Must be the same reference passed to `attach()`.
+   */
+  static fromSession(
+    appiumSessionId: string,
+    options: TVLabsServiceOptions,
+    wdOpts: Options.WebdriverIO & { capabilities?: unknown },
+  ): TVLabsService {
+    if (
+      !wdOpts.capabilities ||
+      typeof wdOpts.capabilities !== 'object' ||
+      Array.isArray(wdOpts.capabilities)
+    ) {
+      throw new SevereServiceError(
+        'wdOpts.capabilities must be a capabilities object. Multi-remote capabilities are not supported.',
+      );
+    }
+
+    const capabilities = wdOpts.capabilities as TVLabsCapabilities;
+    const service = new TVLabsService(
+      options,
+      capabilities as Capabilities.ResolvedTestrunnerCapabilities,
+      wdOpts as Options.WebdriverIO,
+    );
+
+    service._rehydratedSessionId = appiumSessionId;
+
+    return service;
+  }
+
+  /**
+   * Returns the Appium session ID bound via `fromSession()`, or `undefined`
+   * for service instances created through the standard constructor.
+   */
+  get rehydratedSessionId(): string | undefined {
+    return this._rehydratedSessionId;
   }
 
   lastRequestId(): string | undefined {
@@ -90,6 +148,22 @@ export default class TVLabsService implements Services.ServiceInstance {
     );
   }
 
+  /**
+   * Closes any long-lived connections held by the service (currently the
+   * metadata channel WebSocket). Safe to call when no channel was opened.
+   * Call this when you are finished with the service so the process can exit.
+   *
+   * **Ordering:** Await all in-flight `requestMetadata()` calls before calling
+   * `disconnect()`. Tearing down the metadata channel while a request is
+   * pending will cause that call to reject.
+   */
+  async disconnect(): Promise<void> {
+    if (this.metadataChannel) {
+      await this.metadataChannel.disconnect();
+      this.metadataChannel = undefined;
+    }
+  }
+
   onPrepare(
     _config: Options.Testrunner,
     param: Capabilities.TestrunnerCapabilities,
@@ -115,6 +189,12 @@ export default class TVLabsService implements Services.ServiceInstance {
     _specs: string[],
     _cid: string,
   ) {
+    if (this._rehydratedSessionId) {
+      throw new SevereServiceError(
+        'beforeSession() is not valid on a rehydrated service. The session was supplied to fromSession() and should not be recreated.',
+      );
+    }
+
     try {
       const buildPath = this.buildPath();
 
