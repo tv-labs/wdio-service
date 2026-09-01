@@ -136,7 +136,7 @@ const wdOpts = {
   capabilities: {},
   hostname: 'appium.tvlabs.ai',
   port: 4723,
-  protocol: 'https'
+  protocol: 'https',
 };
 
 // appiumSessionId received from the session-creating process
