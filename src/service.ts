@@ -15,14 +15,19 @@ import type {
   TVLabsRequestMetadata,
   TVLabsRequestMetadataResponse,
   TVLabsSessionMetadataResponse,
+  WebdriverSessionCreatePayload,
+  WebdriverTransformableRequest,
   LogLevel,
 } from './types.js';
+
+const TVLABS_SESSION_ID_CAPABILITY = 'tvlabs:session_id';
 
 export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
   private metadataChannel: MetadataChannel | undefined;
   private _rehydratedSessionId: string | undefined;
+  private platformSessionId: string | undefined;
 
   constructor(
     private _options: TVLabsServiceOptions,
@@ -32,10 +37,7 @@ export default class TVLabsService implements Services.ServiceInstance {
     this.log = new Logger('@tvlabs/wdio-service', this._config.logLevel);
 
     this.injectAuthorizationHeader();
-
-    if (this.attachRequestId()) {
-      this.setupRequestId();
-    }
+    this.setupTransformRequest();
 
     this.log.info(`Instantiated TVLabsService v${getServiceVersion()}`);
   }
@@ -195,6 +197,8 @@ export default class TVLabsService implements Services.ServiceInstance {
       );
     }
 
+    this.platformSessionId = undefined;
+
     try {
       const buildPath = this.buildPath();
 
@@ -225,10 +229,12 @@ export default class TVLabsService implements Services.ServiceInstance {
 
       await sessionChannel.connect();
 
-      capabilities['tvlabs:session_id'] = await sessionChannel.newSession(
+      this.platformSessionId = await sessionChannel.newSession(
         capabilities,
         this.retries(),
       );
+
+      capabilities[TVLABS_SESSION_ID_CAPABILITY] = this.platformSessionId;
 
       await sessionChannel.disconnect();
     } catch (error) {
@@ -248,32 +254,177 @@ export default class TVLabsService implements Services.ServiceInstance {
     }
   }
 
-  private setupRequestId() {
+  private setupTransformRequest() {
     const originalTransformRequest = this._config.transformRequest;
 
-    this._config.transformRequest = (requestOptions: RequestInit) => {
-      const requestId = crypto.randomUUID();
-      const originalRequestOptions =
+    this._config.transformRequest = (
+      requestOptions: WebdriverTransformableRequest,
+    ) => {
+      const transformedRequestOptions =
         typeof originalTransformRequest === 'function'
           ? originalTransformRequest(requestOptions)
           : requestOptions;
 
-      if (typeof originalRequestOptions.headers === 'undefined') {
-        originalRequestOptions.headers = <HeadersInit>{};
+      if (this.attachRequestId()) {
+        this.attachRequestIdHeader(transformedRequestOptions);
       }
 
-      this.setRequestHeader(
-        originalRequestOptions.headers,
-        'x-request-id',
-        requestId,
-      );
+      if (this.platformSessionId) {
+        this.injectSessionIdIntoRequest(
+          transformedRequestOptions,
+          this.platformSessionId,
+        );
+      }
 
-      this.log.debug('ATTACHED REQUEST ID', requestId);
-
-      this.setRequestId(requestId);
-
-      return originalRequestOptions;
+      return transformedRequestOptions;
     };
+  }
+
+  private attachRequestIdHeader(requestOptions: WebdriverTransformableRequest) {
+    const requestId = crypto.randomUUID();
+
+    if (typeof requestOptions.headers === 'undefined') {
+      requestOptions.headers = <HeadersInit>{};
+    }
+
+    this.setRequestHeader(requestOptions.headers, 'x-request-id', requestId);
+
+    this.log.debug('ATTACHED REQUEST ID', requestId);
+
+    this.setRequestId(requestId);
+  }
+
+  /**
+   * Injects `tvlabs:session_id` directly into the outgoing `POST /session`
+   * body to ensure that the capabilities object used to create the session
+   * carries the correct value in case the user copied it and the assignment
+   * by reference doesn't take hold.
+   */
+  private injectSessionIdIntoRequest(
+    requestOptions: WebdriverTransformableRequest,
+    platformSessionId: string,
+  ) {
+    const payload = this.readNewSessionPayload(requestOptions);
+
+    if (!payload) {
+      return;
+    }
+
+    const { capabilities } = payload;
+    const alwaysMatch = (capabilities.alwaysMatch ??= {});
+    const existing = alwaysMatch[TVLABS_SESSION_ID_CAPABILITY];
+
+    if (existing === platformSessionId) {
+      // Capability is already correct, no-op
+      return;
+    }
+
+    if (typeof existing === 'string') {
+      this.log.warn(
+        `Outgoing session request carried ${TVLABS_SESSION_ID_CAPABILITY} "${existing}", replacing it with "${platformSessionId}" from this service instance.`,
+      );
+    } else {
+      this.log.warn(
+        `Outgoing session request was missing ${TVLABS_SESSION_ID_CAPABILITY}, re-attaching "${platformSessionId}". This usually means the capabilities object was copied after beforeSession() ran.`,
+      );
+    }
+
+    alwaysMatch[TVLABS_SESSION_ID_CAPABILITY] = platformSessionId;
+
+    // v8 sends a JSONWP copy of the capabilities next to the W3C payload. It
+    // is usually the very same object as `alwaysMatch`, but keep the two in
+    // step when it is not.
+    if (payload.desiredCapabilities) {
+      payload.desiredCapabilities[TVLABS_SESSION_ID_CAPABILITY] =
+        platformSessionId;
+    }
+
+    this.writeNewSessionPayload(requestOptions, payload);
+  }
+
+  /**
+   * Returns the new-session payload carried by an outgoing request, or
+   * `undefined` when the request is not a session creation request.
+   */
+  private readNewSessionPayload(
+    requestOptions: WebdriverTransformableRequest,
+  ): WebdriverSessionCreatePayload | undefined {
+    // v9 (fetch): the payload is already serialized.
+    if (typeof requestOptions.body === 'string') {
+      let payload: unknown;
+
+      try {
+        payload = JSON.parse(requestOptions.body);
+      } catch {
+        return undefined;
+      }
+
+      return this.isNewSessionPayload(payload) ? payload : undefined;
+    }
+
+    // v8 (got): the payload is a live object that `got` serializes later.
+    return this.isNewSessionPayload(requestOptions.json)
+      ? requestOptions.json
+      : undefined;
+  }
+
+  private writeNewSessionPayload(
+    requestOptions: WebdriverTransformableRequest,
+    payload: WebdriverSessionCreatePayload,
+  ) {
+    const body = JSON.stringify(payload);
+
+    // Under v8 the payload was mutated in place and `got` serializes it on
+    // send, so only the serialized v9 body needs writing back.
+    if (typeof requestOptions.body === 'string') {
+      requestOptions.body = body;
+    }
+
+    // `Content-Length` is computed from the original payload before
+    // `transformRequest` runs, so a rewritten payload must refresh it.
+    if (this.hasRequestHeader(requestOptions.headers, 'content-length')) {
+      this.setRequestHeader(
+        requestOptions.headers,
+        'Content-Length',
+        `${new TextEncoder().encode(body).length}`,
+      );
+    }
+  }
+
+  private isNewSessionPayload(
+    payload: unknown,
+  ): payload is WebdriverSessionCreatePayload {
+    if (typeof payload !== 'object' || payload === null) {
+      return false;
+    }
+
+    const capabilities = (payload as WebdriverSessionCreatePayload)
+      .capabilities;
+
+    if (typeof capabilities !== 'object' || capabilities === null) {
+      return false;
+    }
+
+    return 'alwaysMatch' in capabilities || 'firstMatch' in capabilities;
+  }
+
+  private hasRequestHeader(
+    headers: RequestInit['headers'],
+    header: string,
+  ): boolean {
+    if (headers instanceof Headers) {
+      return headers.has(header);
+    }
+
+    if (Array.isArray(headers)) {
+      return headers.some(([key]) => key.toLowerCase() === header);
+    }
+
+    if (typeof headers === 'object' && headers !== null) {
+      return Object.keys(headers).some((key) => key.toLowerCase() === header);
+    }
+
+    return false;
   }
 
   private setRequestHeader(
@@ -283,11 +434,23 @@ export default class TVLabsService implements Services.ServiceInstance {
   ) {
     if (headers instanceof Headers) {
       headers.set(header, value);
-    } else if (typeof headers === 'object') {
+    } else if (typeof headers === 'object' && headers !== null) {
       if (Array.isArray(headers)) {
-        headers.push([header, value]);
+        const existing = headers.find(
+          ([key]) => key.toLowerCase() === header.toLowerCase(),
+        );
+
+        if (existing) {
+          existing[1] = value;
+        } else {
+          headers.push([header, value]);
+        }
       } else {
-        headers[header] = value;
+        const existing = Object.keys(headers).find(
+          (key) => key.toLowerCase() === header.toLowerCase(),
+        );
+
+        headers[existing ?? header] = value;
       }
     }
   }
