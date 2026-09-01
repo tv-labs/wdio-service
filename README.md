@@ -68,7 +68,8 @@ async function run() {
   const wdOpts = {
     capabilities,
     hostname: 'appium.tvlabs.ai',
-    port: 4723
+    port: 4723,
+    protocol: 'https'
   };
 
   // NOTE: wdOpts must be the same reference passed to remote()
@@ -109,6 +110,7 @@ const wdOpts = {
   capabilities,
   hostname: 'appium.tvlabs.ai',
   port: 4723,
+  protocol: 'https'
 };
 
 const service = new TVLabsService(
@@ -134,6 +136,7 @@ const wdOpts = {
   capabilities: {},
   hostname: 'appium.tvlabs.ai',
   port: 4723,
+  protocol: 'https'
 };
 
 // appiumSessionId received from the session-creating process
