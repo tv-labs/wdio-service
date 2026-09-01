@@ -1,6 +1,10 @@
 import { randomInt, randomUUID } from 'crypto';
 import { SevereServiceError } from 'webdriverio';
-import TVLabsService, { type TVLabsCapabilities } from '../src/index.js';
+import TVLabsService, {
+  type TVLabsCapabilities,
+  type TVLabsServiceOptions,
+  type TVLabsSessionMetadataResponse,
+} from '../src/index.js';
 import { SessionChannel } from '../src/channels/session.js';
 import { BuildChannel } from '../src/channels/build.js';
 import { MetadataChannel } from '../src/channels/metadata.js';
@@ -39,6 +43,30 @@ vi.mock('../src/api/sessions', () => {
 });
 
 vi.stubGlobal('process', { exit: vi.fn(), env: {} });
+
+type FromSessionOptions = Options.WebdriverIO & { capabilities?: unknown };
+
+const sessionMetadataResponse = (
+  data: Partial<TVLabsSessionMetadataResponse['data']> = {},
+): TVLabsSessionMetadataResponse => ({
+  data: {
+    id: randomUUID(),
+    type: 'appium',
+    status: 'passed',
+    team_id: randomUUID(),
+    start_time: '2026-04-21T12:00:00Z',
+    duration: 300,
+    end_time: '2026-04-21T12:05:00Z',
+    organization_id: randomUUID(),
+    appium: null,
+    application: null,
+    device: null,
+    recording: null,
+    teleport: null,
+    http_archives: [],
+    ...data,
+  },
+});
 
 describe('TVLabsService', () => {
   beforeEach(() => {
@@ -130,7 +158,7 @@ describe('TVLabsService', () => {
 
     const startedService = async (
       config: Options.WebdriverIO,
-      options: Parameters<typeof TVLabsService>[0] = { apiKey: 'my-api-key' },
+      options: TVLabsServiceOptions = { apiKey: 'my-api-key' },
     ) => {
       const capabilities: TVLabsCapabilities = {};
 
@@ -1054,11 +1082,7 @@ describe('TVLabsService', () => {
       const capabilities: TVLabsCapabilities = {};
       const config: Options.WebdriverIO = {};
       const sessionId = randomUUID();
-      const mockResponse = {
-        id: sessionId,
-        recording_started_at: '2026-04-21T12:00:00Z',
-        recording_ended_at: '2026-04-21T12:05:00Z',
-      };
+      const mockResponse = sessionMetadataResponse({ id: sessionId });
 
       vi.mocked(getSessionMetadata).mockResolvedValue(mockResponse);
 
@@ -1085,7 +1109,9 @@ describe('TVLabsService', () => {
       const config: Options.WebdriverIO = { logLevel: 'debug' };
       const sessionId = randomUUID();
 
-      vi.mocked(getSessionMetadata).mockResolvedValue({});
+      vi.mocked(getSessionMetadata).mockResolvedValue(
+        sessionMetadataResponse(),
+      );
 
       const service = new TVLabsService(options, capabilities, config);
       await service.sessionMetadata(sessionId);
@@ -1152,7 +1178,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
 
       const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
@@ -1163,7 +1189,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
 
       TVLabsService.fromSession(sessionId, options, wdOpts);
 
@@ -1174,7 +1200,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
 
       TVLabsService.fromSession(sessionId, options, wdOpts);
 
@@ -1185,7 +1211,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key', attachRequestId: false };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
 
       const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
@@ -1199,7 +1225,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
 
       TVLabsService.fromSession(sessionId, options, wdOpts);
 
@@ -1210,7 +1236,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
 
       const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
@@ -1235,7 +1261,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
 
       const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
@@ -1256,7 +1282,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
 
       const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
@@ -1273,7 +1299,7 @@ describe('TVLabsService', () => {
       const requestId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
       const mockMetadata = {
         path: '/session/123/element',
         method: 'POST',
@@ -1299,11 +1325,8 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
-      const mockResponse = {
-        id: sessionId,
-        recording_started_at: '2026-04-21T12:00:00Z',
-      };
+      const wdOpts: FromSessionOptions = { capabilities };
+      const mockResponse = sessionMetadataResponse({ id: sessionId });
 
       vi.mocked(getSessionMetadata).mockResolvedValue(mockResponse);
 
@@ -1348,7 +1371,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
-      const wdOpts: Options.WebdriverIO = { capabilities };
+      const wdOpts: FromSessionOptions = { capabilities };
 
       const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
@@ -1363,9 +1386,7 @@ describe('TVLabsService', () => {
 
       const userHeader = 'x-my-header';
       const userHeaderValue = 'my-value';
-      const wdOpts: Options.WebdriverIO & {
-        transformRequest?: (r: RequestInit) => RequestInit;
-      } = {
+      const wdOpts: FromSessionOptions = {
         capabilities,
         transformRequest: (requestOptions: RequestInit) => ({
           ...requestOptions,

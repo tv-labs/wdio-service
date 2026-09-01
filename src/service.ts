@@ -272,7 +272,7 @@ export default class TVLabsService implements Services.ServiceInstance {
       if (this.platformSessionId) {
         this.injectSessionIdIntoRequest(
           transformedRequestOptions,
-          this.platformSessionId
+          this.platformSessionId,
         );
       }
 
