@@ -32,6 +32,29 @@ export type TVLabsCapabilities =
     'tvlabs:device_timeout'?: number;
   };
 
+/**
+ * The body of a WebDriver `POST /session` request.
+ *
+ * WebdriverIO v8 sends a JSONWP-compliant copy of the capabilities alongside
+ * the W3C payload; v9 sends the W3C payload only.
+ */
+export type WebdriverSessionCreatePayload = {
+  capabilities: {
+    alwaysMatch?: Record<string, unknown>;
+    firstMatch?: Record<string, unknown>[];
+  };
+  desiredCapabilities?: Record<string, unknown>;
+};
+
+/**
+ * The request options handed to a WebdriverIO `transformRequest` hook.
+ *
+ * WebdriverIO v9 issues requests through `fetch`, so the payload arrives
+ * serialized on `body`. v8 issues them through `got`, which takes the payload
+ * as an object on `json`. The service supports both.
+ */
+export type WebdriverTransformableRequest = RequestInit & { json?: unknown };
+
 export type TVLabsSessionRequestEventHandler = (
   response: TVLabsSessionRequestUpdate,
 ) => void;

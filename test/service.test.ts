@@ -86,7 +86,7 @@ describe('TVLabsService', () => {
     });
   });
 
-  it('does not set transformRequest if attachRequestId is false', () => {
+  it('does not attach a request id if attachRequestId is false', () => {
     const options = { apiKey: 'my-api-key', attachRequestId: false };
     const capabilities: TVLabsCapabilities = {};
     const config: Options.WebdriverIO = {};
@@ -94,7 +94,360 @@ describe('TVLabsService', () => {
     const service = new TVLabsService(options, capabilities, config);
 
     expect(service).toBeInstanceOf(TVLabsService);
-    expect(config.transformRequest).not.toBeDefined();
+    expect(config.transformRequest).toBeInstanceOf(Function);
+
+    const requestInit: RequestInit = { method: 'GET' };
+    const transformedRequestInit = config.transformRequest?.(requestInit);
+
+    expect(transformedRequestInit?.headers).not.toBeDefined();
+    expect(service.lastRequestId()).not.toBeDefined();
+  });
+
+  describe('session id injection into POST /session (v9 fetch shape)', () => {
+    const sessionId = 'f0d2a2c8-2ba0-4e4d-9c31-4a7c6bd0f8f6';
+
+    const newSessionBody = (
+      alwaysMatch: Record<string, unknown> = {},
+      firstMatch?: Record<string, unknown>[],
+    ) =>
+      JSON.stringify({
+        capabilities: firstMatch
+          ? { alwaysMatch, firstMatch }
+          : { alwaysMatch },
+      });
+
+    const sessionRequest = (body: string): RequestInit => ({
+      method: 'POST',
+      body,
+      headers: new Headers({
+        'Content-Type': 'application/json',
+        'Content-Length': `${new TextEncoder().encode(body).length}`,
+      }),
+    });
+
+    const bodyOf = (requestInit: RequestInit | undefined) =>
+      JSON.parse(requestInit?.body as string);
+
+    const startedService = async (
+      config: Options.WebdriverIO,
+      options: Parameters<typeof TVLabsService>[0] = { apiKey: 'my-api-key' },
+    ) => {
+      const capabilities: TVLabsCapabilities = {};
+
+      fakeSessionChannel.newSession.mockResolvedValue(sessionId);
+
+      const service = new TVLabsService(options, capabilities, config);
+
+      await service.beforeSession(config, capabilities, [], '');
+
+      return service;
+    };
+
+    it('re-attaches the session id when the capabilities have absent tvlabs:session_id', async () => {
+      const config: Options.WebdriverIO = {};
+
+      await startedService(config);
+
+      // Simulates a framework that cloned capabilities before `remote()`,
+      // dropping the capability `beforeSession()` wrote.
+      const requestInit = sessionRequest(
+        newSessionBody({ 'appium:platformName': 'iOS' }),
+      );
+
+      const transformed = config.transformRequest?.(requestInit);
+
+      expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'appium:platformName': 'iOS',
+        'tvlabs:session_id': sessionId,
+      });
+    });
+
+    it('refreshes Content-Length when it rewrites the body', async () => {
+      const config: Options.WebdriverIO = {};
+
+      await startedService(config);
+
+      const requestInit = sessionRequest(newSessionBody());
+      const transformed = config.transformRequest?.(requestInit);
+
+      const headers = transformed?.headers as Headers;
+
+      expect(headers.get('Content-Length')).toEqual(
+        `${new TextEncoder().encode(transformed?.body as string).length}`,
+      );
+    });
+
+    it('creates alwaysMatch when the payload only has firstMatch', async () => {
+      const config: Options.WebdriverIO = {};
+
+      await startedService(config);
+
+      const body = JSON.stringify({
+        capabilities: { firstMatch: [{ 'appium:platformName': 'iOS' }] },
+      });
+
+      const transformed = config.transformRequest?.(sessionRequest(body));
+
+      expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'tvlabs:session_id': sessionId,
+      });
+    });
+
+    it('leaves the body untouched when the session id is already present', async () => {
+      const config: Options.WebdriverIO = {};
+
+      await startedService(config);
+
+      const body = newSessionBody({ 'tvlabs:session_id': sessionId });
+      const requestInit = sessionRequest(body);
+
+      const transformed = config.transformRequest?.(requestInit);
+
+      expect(transformed?.body).toBe(body);
+    });
+
+    it('overwrites a session id minted by a different service instance', async () => {
+      const config: Options.WebdriverIO = {};
+
+      await startedService(config);
+
+      const requestInit = sessionRequest(
+        newSessionBody({ 'tvlabs:session_id': 'some-other-session' }),
+      );
+
+      const transformed = config.transformRequest?.(requestInit);
+
+      expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'tvlabs:session_id': sessionId,
+      });
+    });
+
+    it('injects even when attachRequestId is false', async () => {
+      const config: Options.WebdriverIO = {};
+
+      await startedService(config, {
+        apiKey: 'my-api-key',
+        attachRequestId: false,
+      });
+
+      const transformed = config.transformRequest?.(
+        sessionRequest(newSessionBody()),
+      );
+
+      expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'tvlabs:session_id': sessionId,
+      });
+    });
+
+    it('leaves non-session requests untouched', async () => {
+      const config: Options.WebdriverIO = {};
+
+      await startedService(config);
+
+      const body = JSON.stringify({ using: 'css selector', value: '#button' });
+      const transformed = config.transformRequest?.(sessionRequest(body));
+
+      expect(transformed?.body).toBe(body);
+    });
+
+    it('leaves the body untouched before beforeSession() has run', () => {
+      const config: Options.WebdriverIO = {};
+
+      new TVLabsService({ apiKey: 'my-api-key' }, {}, config);
+
+      const body = newSessionBody({ 'appium:platformName': 'iOS' });
+      const transformed = config.transformRequest?.(sessionRequest(body));
+
+      expect(transformed?.body).toBe(body);
+    });
+
+    it('keeps the session id for a retried session request', async () => {
+      const config: Options.WebdriverIO = {};
+
+      await startedService(config);
+
+      config.transformRequest?.(sessionRequest(newSessionBody()));
+
+      // A caller that retries `remote()` after a failed attempt should
+      // reconnect to the session already reserved for it.
+      const transformed = config.transformRequest?.(
+        sessionRequest(newSessionBody()),
+      );
+
+      expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'tvlabs:session_id': sessionId,
+      });
+    });
+
+    it('clears a previously minted session at the start of beforeSession', async () => {
+      const config: Options.WebdriverIO = {};
+      const service = await startedService(config);
+
+      // A later mint fails, so no session is reserved for this run. The
+      // previous run's id must not leak into the next session request.
+      fakeSessionChannel.newSession.mockRejectedValue(
+        new SevereServiceError('Could not create a new session.'),
+      );
+
+      await expect(service.beforeSession(config, {}, [], '')).rejects.toThrow();
+
+      const body = newSessionBody({ 'appium:platformName': 'iOS' });
+      const transformed = config.transformRequest?.(sessionRequest(body));
+
+      expect(transformed?.body).toBe(body);
+    });
+
+    it('re-arms after a subsequent beforeSession() mints a new session', async () => {
+      const config: Options.WebdriverIO = {};
+      const service = await startedService(config);
+
+      config.transformRequest?.(sessionRequest(newSessionBody()));
+
+      const nextSessionId = '6b1f0f0e-6c1a-4a1e-9b3e-2f0d5a7c1e42';
+      fakeSessionChannel.newSession.mockResolvedValue(nextSessionId);
+
+      await service.beforeSession(config, {}, [], '');
+
+      const transformed = config.transformRequest?.(
+        sessionRequest(newSessionBody()),
+      );
+
+      expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'tvlabs:session_id': nextSessionId,
+      });
+    });
+
+    describe('session id injection into POST /session (v8 got shape)', () => {
+      // v8 hands `transformRequest` a got options object: the payload is a
+      // live object on `json`, there is no `body`, headers are a plain object,
+      // and a JSONWP copy rides along in `desiredCapabilities`.
+      const v8SessionRequest = (payload: unknown): RequestInit => {
+        const json = payload as Record<string, unknown>;
+
+        return {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': `${new TextEncoder().encode(JSON.stringify(json)).length}`,
+          },
+          ...{ json },
+        } as RequestInit;
+      };
+
+      const jsonOf = (requestInit: RequestInit | undefined) =>
+        (requestInit as unknown as { json: NewSessionPayloadShape }).json;
+
+      type NewSessionPayloadShape = {
+        capabilities: {
+          alwaysMatch: Record<string, unknown>;
+          firstMatch: Record<string, unknown>[];
+        };
+        desiredCapabilities: Record<string, unknown>;
+      };
+
+      // v8 aliases `alwaysMatch` and `desiredCapabilities` to one object when
+      // the caller passes flat capabilities.
+      const v8Payload = (caps: Record<string, unknown> = {}) => ({
+        capabilities: { alwaysMatch: caps, firstMatch: [{}] },
+        desiredCapabilities: caps,
+      });
+
+      it('re-attaches the session id into the got payload', async () => {
+        const config: Options.WebdriverIO = {};
+
+        await startedService(config);
+
+        const requestInit = v8SessionRequest(
+          v8Payload({ 'appium:platformName': 'iOS' }),
+        );
+
+        const transformed = config.transformRequest?.(requestInit);
+        const json = jsonOf(transformed);
+
+        expect(json.capabilities.alwaysMatch['tvlabs:session_id']).toEqual(
+          sessionId,
+        );
+        expect(json.desiredCapabilities['tvlabs:session_id']).toEqual(
+          sessionId,
+        );
+      });
+
+      it('mutates the payload in place rather than adding a body', async () => {
+        const config: Options.WebdriverIO = {};
+
+        await startedService(config);
+
+        const payload = v8Payload();
+        const transformed = config.transformRequest?.(
+          v8SessionRequest(payload),
+        );
+
+        // `got` serializes `json` on send, so no `body` should be introduced.
+        expect(transformed?.body).toBeUndefined();
+        expect(payload.capabilities.alwaysMatch).toEqual({
+          'tvlabs:session_id': sessionId,
+        });
+      });
+
+      it('refreshes Content-Length on the plain headers object', async () => {
+        const config: Options.WebdriverIO = {};
+
+        await startedService(config);
+
+        const transformed = config.transformRequest?.(
+          v8SessionRequest(v8Payload()),
+        );
+
+        const headers = transformed?.headers as Record<string, string>;
+
+        expect(headers['Content-Length']).toEqual(
+          `${new TextEncoder().encode(JSON.stringify(jsonOf(transformed))).length}`,
+        );
+      });
+
+      it('keeps the session id for a retried got session request', async () => {
+        const config: Options.WebdriverIO = {};
+
+        await startedService(config);
+
+        config.transformRequest?.(v8SessionRequest(v8Payload()));
+
+        const payload = v8Payload({ 'appium:platformName': 'iOS' });
+        config.transformRequest?.(v8SessionRequest(payload));
+
+        expect(payload.capabilities.alwaysMatch).toEqual({
+          'appium:platformName': 'iOS',
+          'tvlabs:session_id': sessionId,
+        });
+      });
+
+      it('leaves non-session got requests untouched', async () => {
+        const config: Options.WebdriverIO = {};
+
+        await startedService(config);
+
+        const payload = { using: 'css selector', value: '#button' };
+        config.transformRequest?.(v8SessionRequest(payload));
+
+        expect(payload).toEqual({ using: 'css selector', value: '#button' });
+      });
+    });
+
+    it('preserves an existing transformRequest', async () => {
+      const original = vi.fn((requestOptions: RequestInit) => requestOptions);
+      const config: Options.WebdriverIO = { transformRequest: original };
+
+      await startedService(config);
+
+      const transformed = config.transformRequest?.(
+        sessionRequest(newSessionBody()),
+      );
+
+      expect(original).toHaveBeenCalled();
+      expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'tvlabs:session_id': sessionId,
+      });
+    });
   });
 
   describe('Authorization header injection', () => {
@@ -828,15 +1181,18 @@ describe('TVLabsService', () => {
       expect(typeof wdOpts.transformRequest).toBe('function');
     });
 
-    it('does not install transformRequest when attachRequestId is false', () => {
+    it('does not attach a request id when attachRequestId is false', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key', attachRequestId: false };
       const capabilities: TVLabsCapabilities = {};
       const wdOpts: Options.WebdriverIO = { capabilities };
 
-      TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
 
-      expect(wdOpts.transformRequest).toBeUndefined();
+      const transformed = wdOpts.transformRequest?.({ method: 'GET' });
+
+      expect(transformed?.headers).toBeUndefined();
+      expect(service.lastRequestId()).toBeUndefined();
     });
 
     it('injects Authorization header on wdOpts', () => {
