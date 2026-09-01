@@ -325,7 +325,7 @@ export default class TVLabsService implements Services.ServiceInstance {
       );
     } else {
       this.log.warn(
-        `Outgoing session request was missing ${TVLABS_SESSION_ID_CAPABILITY}, re-attaching "${platformSessionId}". This usually means the capabilities object was copied after beforeSession() ran — see https://github.com/tv-labs/wdio-service#capabilities-injection.`,
+        `Outgoing session request was missing ${TVLABS_SESSION_ID_CAPABILITY}, re-attaching "${platformSessionId}". This usually means the capabilities object was copied after beforeSession() ran.`,
       );
     }
 
