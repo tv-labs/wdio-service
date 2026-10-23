@@ -1,26 +1,29 @@
 <p align="center">
-  <a href="https://tvlabs.ai">
-    <img alt="TV Labs Logo" width="200" src="https://tvlabs.ai/images/tvlabs.svg" />
+  <a href="https://device.io">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/device-io-logo-dark.svg" />
+      <img alt="Device.io Logo" width="200" src="assets/device-io-logo-light.svg" />
+    </picture>
   </a>
 </p>
 
 <p align="center">
-  <b>@tvlabs/wdio-service</b> is a <a href="https://webdriver.io/">WebdriverIO</a> service for seamless integration with the <a href="https://tvlabs.ai">TV Labs</a> platform.
+  <b>@tvlabs/wdio-service</b> is a <a href="https://webdriver.io/">WebdriverIO</a> service for seamless integration with the <a href="https://device.io">Device.io</a> platform.
 </p>
 
 ## Introduction
 
 [![npm](https://img.shields.io/npm/v/@tvlabs/wdio-service)](https://www.npmjs.com/package/@tvlabs/wdio-service)
 
-The `@tvlabs/wdio-service` package uses a websocket to connect to the TV Labs platform before an Appium session begins, logging events relating to build upload and session creation as they occur. This offloads the responsibility of creating the TV Labs session from the `POST /session` Webdriver endpoint, leading to more reliable session requests and creation.
+The `@tvlabs/wdio-service` package uses a websocket to connect to the Device.io platform before an Appium session begins, logging events relating to build upload and session creation as they occur. This offloads the responsibility of creating the Device.io session from the `POST /session` Webdriver endpoint, leading to more reliable session requests and creation.
 
-If a build path is provided, the service first makes a build upload request to the TV Labs platform, and then sets the `tvlabs:build` capability to the newly created build ID.
+If a build path is provided, the service first makes a build upload request to the Device.io platform, and then sets the `device:build` capability to the newly created build ID.
 
-The service then makes a session request and then subscribes to events for that request. Once the session has been filled and is ready for the Webdriver script to begin, the service receives a ready event with the TV Labs session ID. This session ID is injected into the capabilities as `tvlabs:session_id` on the Webdriver session create request.
+The service then makes a session request and then subscribes to events for that request. Once the session has been filled and is ready for the Webdriver script to begin, the service receives a ready event with the Device.io session ID. This session ID is injected into the capabilities as `device:session_id` on the Webdriver session create request.
 
-Additionally, the service automatically injects an `Authorization` header with your API key (formatted as `Bearer ${apiKey}`) into all requests to the TV Labs platform. If you have already set an `Authorization` header in your configuration, the service will respect your existing header and not override it.
+Additionally, the service automatically injects an `Authorization` header with your API key (formatted as `Bearer ${apiKey}`) into all requests to the Device.io platform. If you have already set an `Authorization` header in your configuration, the service will respect your existing header and not override it.
 
-The service also adds a unique request ID for each request made. The service will generate and attach an `x-request-id` header before each request to the TV Labs platform. This can be used to correlate requests in the client side logs to the Appium server logs.
+The service also adds a unique request ID for each request made. The service will generate and attach an `x-request-id` header before each request to the Device.io platform. This can be used to correlate requests in the client side logs to the Appium server logs.
 
 ## Installation
 
@@ -42,7 +45,7 @@ yarn add @tvlabs/wdio-service
 
 ### WebdriverIO Test Runner
 
-To use this as a WebdriverIO test runner service, include the service in your WebdriverIO configuration file (e.g. `wdio.conf.ts`) with your TV Labs API key set in the options.
+To use this as a WebdriverIO test runner service, include the service in your WebdriverIO configuration file (e.g. `wdio.conf.ts`) with your Device.io API key set in the options.
 
 ```javascript
 import { TVLabsService } from '@tvlabs/wdio-service';
@@ -67,7 +70,7 @@ async function run() {
 
   const wdOpts = {
     capabilities,
-    hostname: 'appium.tvlabs.ai',
+    hostname: 'wd.device.io',
     port: 4723,
     protocol: 'https'
   };
@@ -95,7 +98,7 @@ run();
 
 ### Attaching to an Existing Session
 
-WebdriverIO's [`attach()`](https://webdriver.io/docs/api/modules#attachoptions) binds a driver to a session that was created earlier — possibly by a different process. Use `TVLabsService.fromSession()` alongside `attach()` to keep TV Labs telemetry (`lastRequestId()`, `requestMetadata()`, `sessionMetadata()`) working for the attaching driver, without recreating the session.
+WebdriverIO's [`attach()`](https://webdriver.io/docs/api/modules#attachoptions) binds a driver to a session that was created earlier — possibly by a different process. Use `TVLabsService.fromSession()` alongside `attach()` to keep Device.io telemetry (`lastRequestId()`, `requestMetadata()`, `sessionMetadata()`) working for the attaching driver, without recreating the session.
 
 The portable handle is the **Appium session ID** — the value of `driver.sessionId` after the original `remote()` call. Pass it through whatever channel fits your setup (env var, fixture, queue message, file).
 
@@ -108,7 +111,7 @@ import { TVLabsService } from '@tvlabs/wdio-service';
 const capabilities = { ... };
 const wdOpts = {
   capabilities,
-  hostname: 'appium.tvlabs.ai',
+  hostname: 'wd.device.io',
   port: 4723,
   protocol: 'https'
 };
@@ -134,7 +137,7 @@ import { TVLabsService } from '@tvlabs/wdio-service';
 
 const wdOpts = {
   capabilities: {},
-  hostname: 'appium.tvlabs.ai',
+  hostname: 'wd.device.io',
   port: 4723,
   protocol: 'https',
 };
@@ -173,19 +176,19 @@ try {
 
 - **Type:** `string`
 - **Required:** Yes
-- **Description:** TV Labs API key used for authentication to the platform
+- **Description:** Device.io API key used for authentication to the platform
 
 ### `buildPath`
 
 - **Type:** `string`
 - **Required:** No
-- **Description:** Path to the packaged build to use for the session. When provided, this will perform a build upload before the session is created, and sets the `tvlabs:build` capability to the newly created build ID. The build is uploaded under the organizations default App unless the `app` option is provided
+- **Description:** Path to the packaged build to use for the session. When provided, this will perform a build upload before the session is created, and sets the `device:build` capability to the newly created build ID. The build is uploaded under the organizations default App unless the `app` option is provided
 
 ### `app`
 
 - **Type:** `string`
 - **Required:** No
-- **Description:** The slug of the app on the TV Labs platform to use to upload the build. When not provided, the organization's default app is used. You may find or create an app on the [Apps page](https://tvlabs.ai/app/apps) in the TV Labs platform.
+- **Description:** The slug of the app on the Device.io platform to use to upload the build. When not provided, the organization's default app is used. You may find or create an app on the [Apps page](https://app.device.io/app/apps) in the Device.io platform.
 
 ### `retries`
 
@@ -199,14 +202,14 @@ try {
 - **Type:** `number`
 - **Required:** No
 - **Default:** `5`
-- **Description:** Maximum number of attempts to re-connect if the connection to TV Labs is lost.
+- **Description:** Maximum number of attempts to re-connect if the connection to Device.io is lost.
 
 ### `attachRequestId`
 
 - **Type:** `boolean`
 - **Required:** No
 - **Default:** `true`
-- **Description:** Controls whether or not to attach an `x-request-id` header to each request made to the TV Labs platform.
+- **Description:** Controls whether or not to attach an `x-request-id` header to each request made to the Device.io platform.
 
 ### `continueOnError`
 
@@ -220,15 +223,15 @@ try {
 ### `lastRequestId()`
 
 - **Returns:** `string | undefined`
-- **Description:** Returns the last request ID attached to a request made to the TV Labs platform. Useful for correlating client-side logs with server-side logs. Returns `undefined` if no request has been made yet or if `attachRequestId` is `false`.
+- **Description:** Returns the last request ID attached to a request made to the Device.io platform. Useful for correlating client-side logs with server-side logs. Returns `undefined` if no request has been made yet or if `attachRequestId` is `false`.
 
 ### `requestMetadata()`
 
 - **Parameters:** `appiumSessionId: string, requestIds: string | string[]`
 - **Returns:** `Promise<TVLabsRequestMetadata | TVLabsRequestMetadataResponse>`
-- **Description:** Fetches metadata for one or more request IDs from the TV Labs platform. Pass a single request ID to get its metadata directly; pass an array to get a map keyed by request ID.
+- **Description:** Fetches metadata for one or more request IDs from the Device.io platform. Pass a single request ID to get its metadata directly; pass an array to get a map keyed by request ID.
 
-> **Note:** Request metadata is processed asynchronously on the TV Labs platform. Fetch after the session ends, or wait a few seconds after the request, to ensure the data is available.
+> **Note:** Request metadata is processed asynchronously on the Device.io platform. Fetch after the session ends, or wait a few seconds after the request, to ensure the data is available.
 
 #### Example
 
@@ -277,11 +280,11 @@ console.log('Multiple requests metadata:', multiMetadata);
 
 - **Parameters:** `appiumSessionId: string`
 - **Returns:** `Promise<TVLabsSessionMetadataResponse>`
-- **Description:** Fetches metadata for a session by Appium session ID from the TV Labs platform.
+- **Description:** Fetches metadata for a session by Appium session ID from the Device.io platform.
 
 > **Note:** Partial metadata will be available immediately after session creation. Fields such as recording end time, session end time, and session duration are populated asynchronously after the session ends — they will be `null` until then.
 
-> **Tip:** The response includes both IDs — `data.id` is the TV Labs session ID (useful for deep-linking into `https://tvlabs.ai/app/sessions/:id`) and `data.appium.session_id` is the Appium session ID. Consumers that only have the Appium session ID can resolve the TV Labs session ID from this response.
+> **Tip:** The response includes both IDs — `data.id` is the Device.io session ID (useful for deep-linking into `https://app.device.io/app/sessions/:id`) and `data.appium.session_id` is the Appium session ID. Consumers that only have the Appium session ID can resolve the Device.io session ID from this response.
 
 #### Example
 

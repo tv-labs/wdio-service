@@ -4,9 +4,9 @@ import { TVLabsService } from '../src/index.ts';
 const apiKey = process.env.TVLABS_API_TOKEN;
 
 const capabilities = {
-  'tvlabs:build': '00000000-0000-0000-0000-000000000000',
-  'tvlabs:teleport_region': 'fake',
-  'tvlabs:constraints': 'platform_key:dev AND model:"Virtual Device"',
+  'device:build': '00000000-0000-0000-0000-000000000000',
+  'device:teleport_region': 'fake',
+  'device:constraints': 'platform_key:dev AND model:"Virtual Device"',
 };
 
 const wdOpts = {

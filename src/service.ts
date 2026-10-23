@@ -20,7 +20,7 @@ import type {
   LogLevel,
 } from './types.js';
 
-const TVLABS_SESSION_ID_CAPABILITY = 'tvlabs:session_id';
+const SESSION_ID_CAPABILITY = 'device:session_id';
 
 export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
@@ -212,7 +212,7 @@ export default class TVLabsService implements Services.ServiceInstance {
 
         await buildChannel.connect();
 
-        capabilities['tvlabs:build'] = await buildChannel.uploadBuild(
+        capabilities['device:build'] = await buildChannel.uploadBuild(
           buildPath,
           this.appSlug(),
         );
@@ -234,7 +234,7 @@ export default class TVLabsService implements Services.ServiceInstance {
         this.retries(),
       );
 
-      capabilities[TVLABS_SESSION_ID_CAPABILITY] = this.platformSessionId;
+      capabilities[SESSION_ID_CAPABILITY] = this.platformSessionId;
 
       await sessionChannel.disconnect();
     } catch (error) {
@@ -295,7 +295,7 @@ export default class TVLabsService implements Services.ServiceInstance {
   }
 
   /**
-   * Injects `tvlabs:session_id` directly into the outgoing `POST /session`
+   * Injects `device:session_id` directly into the outgoing `POST /session`
    * body to ensure that the capabilities object used to create the session
    * carries the correct value in case the user copied it and the assignment
    * by reference doesn't take hold.
@@ -312,7 +312,7 @@ export default class TVLabsService implements Services.ServiceInstance {
 
     const { capabilities } = payload;
     const alwaysMatch = (capabilities.alwaysMatch ??= {});
-    const existing = alwaysMatch[TVLABS_SESSION_ID_CAPABILITY];
+    const existing = alwaysMatch[SESSION_ID_CAPABILITY];
 
     if (existing === platformSessionId) {
       // Capability is already correct, no-op
@@ -321,22 +321,21 @@ export default class TVLabsService implements Services.ServiceInstance {
 
     if (typeof existing === 'string') {
       this.log.warn(
-        `Outgoing session request carried ${TVLABS_SESSION_ID_CAPABILITY} "${existing}", replacing it with "${platformSessionId}" from this service instance.`,
+        `Outgoing session request carried ${SESSION_ID_CAPABILITY} "${existing}", replacing it with "${platformSessionId}" from this service instance.`,
       );
     } else {
       this.log.warn(
-        `Outgoing session request was missing ${TVLABS_SESSION_ID_CAPABILITY}, re-attaching "${platformSessionId}". This usually means the capabilities object was copied after beforeSession() ran.`,
+        `Outgoing session request was missing ${SESSION_ID_CAPABILITY}, re-attaching "${platformSessionId}". This usually means the capabilities object was copied after beforeSession() ran.`,
       );
     }
 
-    alwaysMatch[TVLABS_SESSION_ID_CAPABILITY] = platformSessionId;
+    alwaysMatch[SESSION_ID_CAPABILITY] = platformSessionId;
 
     // v8 sends a JSONWP copy of the capabilities next to the W3C payload. It
     // is usually the very same object as `alwaysMatch`, but keep the two in
     // step when it is not.
     if (payload.desiredCapabilities) {
-      payload.desiredCapabilities[TVLABS_SESSION_ID_CAPABILITY] =
-        platformSessionId;
+      payload.desiredCapabilities[SESSION_ID_CAPABILITY] = platformSessionId;
     }
 
     this.writeNewSessionPayload(requestOptions, payload);
