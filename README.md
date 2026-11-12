@@ -70,7 +70,7 @@ async function run() {
 
   const wdOpts = {
     capabilities,
-    hostname: 'wd.device.io',
+    hostname: 'webdriver.device.io',
     port: 4723,
     protocol: 'https'
   };
@@ -111,7 +111,7 @@ import { TVLabsService } from '@tvlabs/wdio-service';
 const capabilities = { ... };
 const wdOpts = {
   capabilities,
-  hostname: 'wd.device.io',
+  hostname: 'webdriver.device.io',
   port: 4723,
   protocol: 'https'
 };
@@ -137,7 +137,7 @@ import { TVLabsService } from '@tvlabs/wdio-service';
 
 const wdOpts = {
   capabilities: {},
-  hostname: 'wd.device.io',
+  hostname: 'webdriver.device.io',
   port: 4723,
   protocol: 'https',
 };
