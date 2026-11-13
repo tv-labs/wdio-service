@@ -27,7 +27,7 @@ export class BuildChannel extends BaseChannel {
       maxReconnectRetries,
       key,
       logLevel,
-      '@tvlabs/build-channel',
+      '@deviceio/build-channel',
     );
     this.lobbyTopic = this.socket.channel('upload:lobby');
   }

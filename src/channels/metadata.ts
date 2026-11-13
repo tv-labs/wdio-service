@@ -18,7 +18,7 @@ export class MetadataChannel extends BaseChannel {
       maxReconnectRetries,
       key,
       logLevel,
-      '@tvlabs/metadata-channel',
+      '@deviceio/metadata-channel',
     );
     this.lobbyTopic = this.socket.channel('metadata:lobby');
   }

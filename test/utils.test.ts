@@ -15,6 +15,6 @@ describe('TV Labs Utils', () => {
   });
 
   it('can get the service name', async () => {
-    expect(getServiceName()).toBe('@tvlabs/wdio-service');
+    expect(getServiceName()).toBe('@deviceio/wdio-service');
   });
 });

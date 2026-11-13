@@ -1,5 +1,5 @@
 {
-  "name": "@tvlabs/wdio-service",
+  "name": "@deviceio/wdio-service",
   "version": "0.1.14",
   "description": "WebdriverIO service that provides a better integration into TV Labs",
   "author": "Regan Karlewicz <regan@tvlabs.ai>",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tv-labs/wdio-service.git"
+    "url": "git+https://github.com/deviceio/wdio-service.git"
   },
   "keywords": [
     "wdio-plugin",
@@ -19,7 +19,7 @@
     "appium"
   ],
   "bugs": {
-    "url": "https://github.com/tv-labs/wdio-service/issues"
+    "url": "https://github.com/deviceio/wdio-service/issues"
   },
   "scripts": {
     "build": "npm run clean && rollup -c",

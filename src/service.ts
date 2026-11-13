@@ -34,7 +34,7 @@ export default class TVLabsService implements Services.ServiceInstance {
     private _capabilities: Capabilities.ResolvedTestrunnerCapabilities,
     private _config: Options.WebdriverIO,
   ) {
-    this.log = new Logger('@tvlabs/wdio-service', this._config.logLevel);
+    this.log = new Logger('@deviceio/wdio-service', this._config.logLevel);
 
     this.injectAuthorizationHeader();
     this.setupTransformRequest();

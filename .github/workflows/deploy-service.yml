@@ -39,9 +39,9 @@ jobs:
           payload: |
             {
               "VERSION": "${{ steps.package-version.outputs.version }}",
-              "PACKAGE_LINK": "https://www.npmjs.com/package/@tvlabs/wdio-service/v/${{ steps.package-version.outputs.version }}",
-              "RELEASE_LINK": "https://github.com/tv-labs/wdio-tvlabs-service/releases/tag/v${{ steps.package-version.outputs.version }}",
-              "PACKAGE_NAME": "@tvlabs/wdio-service"
+              "PACKAGE_LINK": "https://www.npmjs.com/package/@deviceio/wdio-service/v/${{ steps.package-version.outputs.version }}",
+              "RELEASE_LINK": "https://github.com/deviceio/wdio-service/releases/tag/v${{ steps.package-version.outputs.version }}",
+              "PACKAGE_NAME": "@deviceio/wdio-service"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.PUBLISH_SLACK_WEBHOOK_URL }}

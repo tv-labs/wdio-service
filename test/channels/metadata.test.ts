@@ -50,7 +50,7 @@ describe('Metadata Channel', () => {
         params: {
           api_key: fakeApiKey,
           service_version: expect.not.stringMatching('unknown'),
-          service_name: '@tvlabs/wdio-service',
+          service_name: '@deviceio/wdio-service',
         },
       }),
     );

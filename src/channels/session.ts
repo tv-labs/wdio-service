@@ -33,7 +33,7 @@ export class SessionChannel extends BaseChannel {
       maxReconnectRetries,
       key,
       logLevel,
-      '@tvlabs/session-channel',
+      '@deviceio/session-channel',
     );
     this.lobbyTopic = this.socket.channel('requests:lobby');
   }

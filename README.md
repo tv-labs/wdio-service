@@ -8,14 +8,14 @@
 </p>
 
 <p align="center">
-  <b>@tvlabs/wdio-service</b> is a <a href="https://webdriver.io/">WebdriverIO</a> service for seamless integration with the <a href="https://device.io">Device.io</a> platform.
+  <b>@deviceio/wdio-service</b> is a <a href="https://webdriver.io/">WebdriverIO</a> service for seamless integration with the <a href="https://device.io">Device.io</a> platform.
 </p>
 
 ## Introduction
 
-[![npm](https://img.shields.io/npm/v/@tvlabs/wdio-service)](https://www.npmjs.com/package/@tvlabs/wdio-service)
+[![npm](https://img.shields.io/npm/v/@deviceio/wdio-service)](https://www.npmjs.com/package/@deviceio/wdio-service)
 
-The `@tvlabs/wdio-service` package uses a websocket to connect to the Device.io platform before an Appium session begins, logging events relating to build upload and session creation as they occur. This offloads the responsibility of creating the Device.io session from the `POST /session` Webdriver endpoint, leading to more reliable session requests and creation.
+The `@deviceio/wdio-service` package uses a websocket to connect to the Device.io platform before an Appium session begins, logging events relating to build upload and session creation as they occur. This offloads the responsibility of creating the Device.io session from the `POST /session` Webdriver endpoint, leading to more reliable session requests and creation.
 
 If a build path is provided, the service first makes a build upload request to the Device.io platform, and then sets the `device:build` capability to the newly created build ID.
 
@@ -32,13 +32,13 @@ In your WebdriverIO project, run one of the following commands to install:
 ### NPM
 
 ```
-npm i --save @tvlabs/wdio-service
+npm i --save @deviceio/wdio-service
 ```
 
 ### Yarn
 
 ```
-yarn add @tvlabs/wdio-service
+yarn add @deviceio/wdio-service
 ```
 
 ## Usage
@@ -48,7 +48,7 @@ yarn add @tvlabs/wdio-service
 To use this as a WebdriverIO test runner service, include the service in your WebdriverIO configuration file (e.g. `wdio.conf.ts`) with your Device.io API key set in the options.
 
 ```javascript
-import { TVLabsService } from '@tvlabs/wdio-service';
+import { TVLabsService } from '@deviceio/wdio-service';
 
 export const config = {
   // ...
@@ -63,7 +63,7 @@ To use this with WebdriverIO remote but without the test runner, call `beforeSes
 
 ```javascript
 import { remote } from 'webdriverio';
-import { TVLabsService } from '@tvlabs/wdio-service';
+import { TVLabsService } from '@deviceio/wdio-service';
 
 async function run() {
   const capabilities = { ... };
@@ -106,7 +106,7 @@ The portable handle is the **Appium session ID** — the value of `driver.sessio
 
 ```javascript
 import { remote } from 'webdriverio';
-import { TVLabsService } from '@tvlabs/wdio-service';
+import { TVLabsService } from '@deviceio/wdio-service';
 
 const capabilities = { ... };
 const wdOpts = {
@@ -133,7 +133,7 @@ const appiumSessionId = driver.sessionId;
 
 ```javascript
 import { attach } from 'webdriverio';
-import { TVLabsService } from '@tvlabs/wdio-service';
+import { TVLabsService } from '@deviceio/wdio-service';
 
 const wdOpts = {
   capabilities: {},
@@ -237,7 +237,7 @@ try {
 
 ```javascript
 import { remote } from 'webdriverio';
-import { TVLabsService } from '@tvlabs/wdio-service';
+import { TVLabsService } from '@deviceio/wdio-service';
 
 const capabilities = { ... };
 const wdOpts = { ... };
@@ -290,7 +290,7 @@ console.log('Multiple requests metadata:', multiMetadata);
 
 ```javascript
 import { remote } from 'webdriverio';
-import { TVLabsService } from '@tvlabs/wdio-service';
+import { TVLabsService } from '@deviceio/wdio-service';
 
 const capabilities = { ... };
 const wdOpts = { ... };
