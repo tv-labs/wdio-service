@@ -19,7 +19,7 @@ The `@deviceio/wdio-service` package uses a websocket to connect to the Device.i
 
 If a build path is provided, the service first makes a build upload request to the Device.io platform, and then sets the `device:build` capability to the newly created build ID.
 
-The service then makes a session request and then subscribes to events for that request. Once the session has been filled and is ready for the Webdriver script to begin, the service receives a ready event with the Device.io session ID. This session ID is injected into the capabilities as `device:session_id` on the Webdriver session create request.
+The service then makes a session request and then subscribes to events for that request. Once the session has been filled and is ready for the Webdriver script to begin, the service receives a ready event with the Device.io session ID. This session ID is injected into the capabilities as `device:session_id` on the Webdriver session create request. For backwards compatibility, the legacy `tvlabs:session_id` and `tvlabs:build` capabilities are written with the same values.
 
 Additionally, the service automatically injects an `Authorization` header with your API key (formatted as `Bearer ${apiKey}`) into all requests to the Device.io platform. If you have already set an `Authorization` header in your configuration, the service will respect your existing header and not override it.
 

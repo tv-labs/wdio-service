@@ -21,6 +21,10 @@ import type {
 } from './types.js';
 
 const SESSION_ID_CAPABILITY = 'device:session_id';
+// Legacy `tvlabs:*` capabilities are still written alongside the `device:*`
+// ones so the service keeps working against platform versions that only read
+// the old prefix.
+const LEGACY_SESSION_ID_CAPABILITY = 'tvlabs:session_id';
 
 export default class TVLabsService implements Services.ServiceInstance {
   private log: Logger;
@@ -212,10 +216,13 @@ export default class TVLabsService implements Services.ServiceInstance {
 
         await buildChannel.connect();
 
-        capabilities['device:build'] = await buildChannel.uploadBuild(
+        const buildId = await buildChannel.uploadBuild(
           buildPath,
           this.appSlug(),
         );
+
+        capabilities['device:build'] = buildId;
+        capabilities['tvlabs:build'] = buildId;
 
         await buildChannel.disconnect();
       }
@@ -235,6 +242,7 @@ export default class TVLabsService implements Services.ServiceInstance {
       );
 
       capabilities[SESSION_ID_CAPABILITY] = this.platformSessionId;
+      capabilities[LEGACY_SESSION_ID_CAPABILITY] = this.platformSessionId;
 
       await sessionChannel.disconnect();
     } catch (error) {
@@ -295,10 +303,10 @@ export default class TVLabsService implements Services.ServiceInstance {
   }
 
   /**
-   * Injects `device:session_id` directly into the outgoing `POST /session`
-   * body to ensure that the capabilities object used to create the session
-   * carries the correct value in case the user copied it and the assignment
-   * by reference doesn't take hold.
+   * Injects `device:session_id` (and the legacy `tvlabs:session_id`) directly
+   * into the outgoing `POST /session` body to ensure that the capabilities
+   * object used to create the session carries the correct value in case the
+   * user copied it and the assignment by reference doesn't take hold.
    */
   private injectSessionIdIntoRequest(
     requestOptions: WebdriverTransformableRequest,
@@ -314,7 +322,10 @@ export default class TVLabsService implements Services.ServiceInstance {
     const alwaysMatch = (capabilities.alwaysMatch ??= {});
     const existing = alwaysMatch[SESSION_ID_CAPABILITY];
 
-    if (existing === platformSessionId) {
+    if (
+      existing === platformSessionId &&
+      alwaysMatch[LEGACY_SESSION_ID_CAPABILITY] === platformSessionId
+    ) {
       // Capability is already correct, no-op
       return;
     }
@@ -330,12 +341,15 @@ export default class TVLabsService implements Services.ServiceInstance {
     }
 
     alwaysMatch[SESSION_ID_CAPABILITY] = platformSessionId;
+    alwaysMatch[LEGACY_SESSION_ID_CAPABILITY] = platformSessionId;
 
     // v8 sends a JSONWP copy of the capabilities next to the W3C payload. It
     // is usually the very same object as `alwaysMatch`, but keep the two in
     // step when it is not.
     if (payload.desiredCapabilities) {
       payload.desiredCapabilities[SESSION_ID_CAPABILITY] = platformSessionId;
+      payload.desiredCapabilities[LEGACY_SESSION_ID_CAPABILITY] =
+        platformSessionId;
     }
 
     this.writeNewSessionPayload(requestOptions, payload);
