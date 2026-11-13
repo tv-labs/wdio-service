@@ -1,4 +1,4 @@
-name: Publish WebdriverIO TV Labs Service
+name: Publish WebdriverIO Device.io Service
 
 on:
   release:

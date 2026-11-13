@@ -48,14 +48,16 @@ yarn add @deviceio/wdio-service
 To use this as a WebdriverIO test runner service, include the service in your WebdriverIO configuration file (e.g. `wdio.conf.ts`) with your Device.io API key set in the options.
 
 ```javascript
-import { TVLabsService } from '@deviceio/wdio-service';
+import { DeviceIOService } from '@deviceio/wdio-service';
 
 export const config = {
   // ...
-  services: [[TVLabsService, { apiKey: process.env.TVLABS_API_KEY }]],
+  services: [[DeviceIOService, { apiKey: process.env.DEVICEIO_API_KEY }]],
   // ...
 };
 ```
+
+> **Migrating from `TVLabsService`:** the class was renamed to `DeviceIOService`, and the `TVLabs*` types to `DeviceIO*`. The old names are still exported as `@deprecated` aliases, so existing configs keep working, but they will be removed in the next major release.
 
 ### Standalone (remote)
 
@@ -63,7 +65,7 @@ To use this with WebdriverIO remote but without the test runner, call `beforeSes
 
 ```javascript
 import { remote } from 'webdriverio';
-import { TVLabsService } from '@deviceio/wdio-service';
+import { DeviceIOService } from '@deviceio/wdio-service';
 
 async function run() {
   const capabilities = { ... };
@@ -76,8 +78,8 @@ async function run() {
   };
 
   // NOTE: wdOpts must be the same reference passed to remote()
-  const service = new TVLabsService(
-    { apiKey: process.env.TVLABS_API_KEY },
+  const service = new DeviceIOService(
+    { apiKey: process.env.DEVICEIO_API_KEY },
     capabilities,
     wdOpts,
   );
@@ -98,7 +100,7 @@ run();
 
 ### Attaching to an Existing Session
 
-WebdriverIO's [`attach()`](https://webdriver.io/docs/api/modules#attachoptions) binds a driver to a session that was created earlier — possibly by a different process. Use `TVLabsService.fromSession()` alongside `attach()` to keep Device.io telemetry (`lastRequestId()`, `requestMetadata()`, `sessionMetadata()`) working for the attaching driver, without recreating the session.
+WebdriverIO's [`attach()`](https://webdriver.io/docs/api/modules#attachoptions) binds a driver to a session that was created earlier — possibly by a different process. Use `DeviceIOService.fromSession()` alongside `attach()` to keep Device.io telemetry (`lastRequestId()`, `requestMetadata()`, `sessionMetadata()`) working for the attaching driver, without recreating the session.
 
 The portable handle is the **Appium session ID** — the value of `driver.sessionId` after the original `remote()` call. Pass it through whatever channel fits your setup (env var, fixture, queue message, file).
 
@@ -106,7 +108,7 @@ The portable handle is the **Appium session ID** — the value of `driver.sessio
 
 ```javascript
 import { remote } from 'webdriverio';
-import { TVLabsService } from '@deviceio/wdio-service';
+import { DeviceIOService } from '@deviceio/wdio-service';
 
 const capabilities = { ... };
 const wdOpts = {
@@ -116,8 +118,8 @@ const wdOpts = {
   protocol: 'https'
 };
 
-const service = new TVLabsService(
-  { apiKey: process.env.TVLABS_API_KEY },
+const service = new DeviceIOService(
+  { apiKey: process.env.DEVICEIO_API_KEY },
   capabilities,
   wdOpts,
 );
@@ -133,7 +135,7 @@ const appiumSessionId = driver.sessionId;
 
 ```javascript
 import { attach } from 'webdriverio';
-import { TVLabsService } from '@deviceio/wdio-service';
+import { DeviceIOService } from '@deviceio/wdio-service';
 
 const wdOpts = {
   capabilities: {},
@@ -143,9 +145,9 @@ const wdOpts = {
 };
 
 // appiumSessionId received from the session-creating process
-const service = TVLabsService.fromSession(
+const service = DeviceIOService.fromSession(
   appiumSessionId,
-  { apiKey: process.env.TVLABS_API_KEY },
+  { apiKey: process.env.DEVICEIO_API_KEY },
   wdOpts,
 );
 
@@ -168,7 +170,7 @@ try {
 }
 ```
 
-> **Note:** `lastRequestId()` is per-instance — each `TVLabsService` tracks request IDs that flow through its own `transformRequest` hook. Use `requestMetadata()` and `sessionMetadata()` (both keyed by Appium session ID) for telemetry that needs to span instances.
+> **Note:** `lastRequestId()` is per-instance — each `DeviceIOService` tracks request IDs that flow through its own `transformRequest` hook. Use `requestMetadata()` and `sessionMetadata()` (both keyed by Appium session ID) for telemetry that needs to span instances.
 
 ## Options
 
@@ -228,7 +230,7 @@ try {
 ### `requestMetadata()`
 
 - **Parameters:** `appiumSessionId: string, requestIds: string | string[]`
-- **Returns:** `Promise<TVLabsRequestMetadata | TVLabsRequestMetadataResponse>`
+- **Returns:** `Promise<DeviceIORequestMetadata | DeviceIORequestMetadataResponse>`
 - **Description:** Fetches metadata for one or more request IDs from the Device.io platform. Pass a single request ID to get its metadata directly; pass an array to get a map keyed by request ID.
 
 > **Note:** Request metadata is processed asynchronously on the Device.io platform. Fetch after the session ends, or wait a few seconds after the request, to ensure the data is available.
@@ -237,13 +239,13 @@ try {
 
 ```javascript
 import { remote } from 'webdriverio';
-import { TVLabsService } from '@deviceio/wdio-service';
+import { DeviceIOService } from '@deviceio/wdio-service';
 
 const capabilities = { ... };
 const wdOpts = { ... };
 
-const service = new TVLabsService(
-  { apiKey: process.env.TVLABS_API_KEY },
+const service = new DeviceIOService(
+  { apiKey: process.env.DEVICEIO_API_KEY },
   capabilities,
   wdOpts,
 );
@@ -279,7 +281,7 @@ console.log('Multiple requests metadata:', multiMetadata);
 ### `sessionMetadata()`
 
 - **Parameters:** `appiumSessionId: string`
-- **Returns:** `Promise<TVLabsSessionMetadataResponse>`
+- **Returns:** `Promise<DeviceIOSessionMetadataResponse>`
 - **Description:** Fetches metadata for a session by Appium session ID from the Device.io platform.
 
 > **Note:** Partial metadata will be available immediately after session creation. Fields such as recording end time, session end time, and session duration are populated asynchronously after the session ends — they will be `null` until then.
@@ -290,13 +292,13 @@ console.log('Multiple requests metadata:', multiMetadata);
 
 ```javascript
 import { remote } from 'webdriverio';
-import { TVLabsService } from '@deviceio/wdio-service';
+import { DeviceIOService } from '@deviceio/wdio-service';
 
 const capabilities = { ... };
 const wdOpts = { ... };
 
-const service = new TVLabsService(
-  { apiKey: process.env.TVLABS_API_KEY },
+const service = new DeviceIOService(
+  { apiKey: process.env.DEVICEIO_API_KEY },
   capabilities,
   wdOpts,
 );
@@ -334,11 +336,11 @@ console.log(`Recording on ${year} ${make} ${model} started at ${start_time}`);
 
 ## Static Factory
 
-### `TVLabsService.fromSession()`
+### `DeviceIOService.fromSession()`
 
-- **Parameters:** `appiumSessionId: string, options: TVLabsServiceOptions, wdOpts: Options.WebdriverIO`
-- **Returns:** `TVLabsService`
-- **Description:** Creates a `TVLabsService` instance bound to an existing Appium session without calling `beforeSession()`. Use this when you have an Appium session ID (the value of `driver.sessionId` after a previous `remote()` call) and want to attach to that session via WebdriverIO's `attach()`.
+- **Parameters:** `appiumSessionId: string, options: DeviceIOServiceOptions, wdOpts: Options.WebdriverIO`
+- **Returns:** `DeviceIOService`
+- **Description:** Creates a `DeviceIOService` instance bound to an existing Appium session without calling `beforeSession()`. Use this when you have an Appium session ID (the value of `driver.sessionId` after a previous `remote()` call) and want to attach to that session via WebdriverIO's `attach()`.
 
 The factory:
 

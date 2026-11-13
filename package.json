@@ -1,7 +1,7 @@
 {
   "name": "@deviceio/wdio-service",
   "version": "0.2.0",
-  "description": "WebdriverIO service that provides a better integration into TV Labs",
+  "description": "WebdriverIO service that provides a better integration into Device.io",
   "author": "Regan Karlewicz <regan@tvlabs.ai>",
   "license": "Apache-2.0",
   "engines": {
@@ -14,8 +14,8 @@
   "keywords": [
     "wdio-plugin",
     "wdio-service",
-    "tvlabs",
-    "tv-labs",
+    "deviceio",
+    "device-io",
     "appium"
   ],
   "bugs": {

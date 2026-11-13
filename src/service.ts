@@ -10,11 +10,11 @@ import { Logger } from './logger.js';
 
 import type { Services, Capabilities, Options } from '@wdio/types';
 import type {
-  TVLabsCapabilities,
-  TVLabsServiceOptions,
-  TVLabsRequestMetadata,
-  TVLabsRequestMetadataResponse,
-  TVLabsSessionMetadataResponse,
+  DeviceIOCapabilities,
+  DeviceIOServiceOptions,
+  DeviceIORequestMetadata,
+  DeviceIORequestMetadataResponse,
+  DeviceIOSessionMetadataResponse,
   WebdriverSessionCreatePayload,
   WebdriverTransformableRequest,
   LogLevel,
@@ -26,7 +26,7 @@ const SESSION_ID_CAPABILITY = 'device:session_id';
 // the old prefix.
 const LEGACY_SESSION_ID_CAPABILITY = 'tvlabs:session_id';
 
-export default class TVLabsService implements Services.ServiceInstance {
+export default class DeviceIOService implements Services.ServiceInstance {
   private log: Logger;
   private requestId: string | undefined;
   private metadataChannel: MetadataChannel | undefined;
@@ -34,7 +34,7 @@ export default class TVLabsService implements Services.ServiceInstance {
   private platformSessionId: string | undefined;
 
   constructor(
-    private _options: TVLabsServiceOptions,
+    private _options: DeviceIOServiceOptions,
     private _capabilities: Capabilities.ResolvedTestrunnerCapabilities,
     private _config: Options.WebdriverIO,
   ) {
@@ -43,11 +43,11 @@ export default class TVLabsService implements Services.ServiceInstance {
     this.injectAuthorizationHeader();
     this.setupTransformRequest();
 
-    this.log.info(`Instantiated TVLabsService v${getServiceVersion()}`);
+    this.log.info(`Instantiated DeviceIOService v${getServiceVersion()}`);
   }
 
   /**
-   * Creates a TVLabsService instance bound to an existing Appium session.
+   * Creates a DeviceIOService instance bound to an existing Appium session.
    *
    * Use this when you have an Appium session ID (e.g. from `driver.sessionId`
    * after a previous `remote()` call, possibly in another process) and want
@@ -70,9 +70,9 @@ export default class TVLabsService implements Services.ServiceInstance {
    */
   static fromSession(
     appiumSessionId: string,
-    options: TVLabsServiceOptions,
+    options: DeviceIOServiceOptions,
     wdOpts: Options.WebdriverIO & { capabilities?: unknown },
-  ): TVLabsService {
+  ): DeviceIOService {
     if (
       !wdOpts.capabilities ||
       typeof wdOpts.capabilities !== 'object' ||
@@ -83,8 +83,8 @@ export default class TVLabsService implements Services.ServiceInstance {
       );
     }
 
-    const capabilities = wdOpts.capabilities as TVLabsCapabilities;
-    const service = new TVLabsService(
+    const capabilities = wdOpts.capabilities as DeviceIOCapabilities;
+    const service = new DeviceIOService(
       options,
       capabilities as Capabilities.ResolvedTestrunnerCapabilities,
       wdOpts as Options.WebdriverIO,
@@ -110,7 +110,7 @@ export default class TVLabsService implements Services.ServiceInstance {
   async requestMetadata(
     sessionId: string,
     requestIds: string | string[],
-  ): Promise<TVLabsRequestMetadata | TVLabsRequestMetadataResponse> {
+  ): Promise<DeviceIORequestMetadata | DeviceIORequestMetadataResponse> {
     const requestIdArray = Array.isArray(requestIds)
       ? requestIds
       : [requestIds];
@@ -143,7 +143,7 @@ export default class TVLabsService implements Services.ServiceInstance {
 
   async sessionMetadata(
     sessionId: string,
-  ): Promise<TVLabsSessionMetadataResponse> {
+  ): Promise<DeviceIOSessionMetadataResponse> {
     return getSessionMetadata(
       {
         baseUrl: this.apiBaseUrl(),
@@ -191,7 +191,7 @@ export default class TVLabsService implements Services.ServiceInstance {
 
   async beforeSession(
     _config: Omit<Options.Testrunner, 'capabilities'>,
-    capabilities: TVLabsCapabilities,
+    capabilities: DeviceIOCapabilities,
     _specs: string[],
     _cid: string,
   ) {

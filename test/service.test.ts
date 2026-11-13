@@ -1,9 +1,9 @@
 import { randomInt, randomUUID } from 'crypto';
 import { SevereServiceError } from 'webdriverio';
-import TVLabsService, {
-  type TVLabsCapabilities,
-  type TVLabsServiceOptions,
-  type TVLabsSessionMetadataResponse,
+import DeviceIOService, {
+  type DeviceIOCapabilities,
+  type DeviceIOServiceOptions,
+  type DeviceIOSessionMetadataResponse,
 } from '../src/index.js';
 import { SessionChannel } from '../src/channels/session.js';
 import { BuildChannel } from '../src/channels/build.js';
@@ -47,8 +47,8 @@ vi.stubGlobal('process', { exit: vi.fn(), env: {} });
 type FromSessionOptions = Options.WebdriverIO & { capabilities?: unknown };
 
 const sessionMetadataResponse = (
-  data: Partial<TVLabsSessionMetadataResponse['data']> = {},
-): TVLabsSessionMetadataResponse => ({
+  data: Partial<DeviceIOSessionMetadataResponse['data']> = {},
+): DeviceIOSessionMetadataResponse => ({
   data: {
     id: randomUUID(),
     type: 'appium',
@@ -68,18 +68,18 @@ const sessionMetadataResponse = (
   },
 });
 
-describe('TVLabsService', () => {
+describe('DeviceIOService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should be a function', () => {
-    expect(TVLabsService).toBeInstanceOf(Function);
+    expect(DeviceIOService).toBeInstanceOf(Function);
   });
 
   it('can be instantiated', () => {
     const options = { apiKey: 'my-api-key' };
-    const capabilities: TVLabsCapabilities = {
+    const capabilities: DeviceIOCapabilities = {
       'device:constraints': {
         platform_key: 'roku',
       },
@@ -87,19 +87,19 @@ describe('TVLabsService', () => {
     };
     const config = {};
 
-    const service = new TVLabsService(options, capabilities, config);
+    const service = new DeviceIOService(options, capabilities, config);
 
-    expect(service).toBeInstanceOf(TVLabsService);
+    expect(service).toBeInstanceOf(DeviceIOService);
   });
 
   it('sets transformRequest to include a request id', () => {
     const options = { apiKey: 'my-api-key' };
-    const capabilities: TVLabsCapabilities = {};
+    const capabilities: DeviceIOCapabilities = {};
     const config: Options.WebdriverIO = {};
 
-    const service = new TVLabsService(options, capabilities, config);
+    const service = new DeviceIOService(options, capabilities, config);
 
-    expect(service).toBeInstanceOf(TVLabsService);
+    expect(service).toBeInstanceOf(DeviceIOService);
     expect(config.transformRequest).toBeDefined();
     expect(config.transformRequest).toBeInstanceOf(Function);
 
@@ -116,12 +116,12 @@ describe('TVLabsService', () => {
 
   it('does not attach a request id if attachRequestId is false', () => {
     const options = { apiKey: 'my-api-key', attachRequestId: false };
-    const capabilities: TVLabsCapabilities = {};
+    const capabilities: DeviceIOCapabilities = {};
     const config: Options.WebdriverIO = {};
 
-    const service = new TVLabsService(options, capabilities, config);
+    const service = new DeviceIOService(options, capabilities, config);
 
-    expect(service).toBeInstanceOf(TVLabsService);
+    expect(service).toBeInstanceOf(DeviceIOService);
     expect(config.transformRequest).toBeInstanceOf(Function);
 
     const requestInit: RequestInit = { method: 'GET' };
@@ -158,13 +158,13 @@ describe('TVLabsService', () => {
 
     const startedService = async (
       config: Options.WebdriverIO,
-      options: TVLabsServiceOptions = { apiKey: 'my-api-key' },
+      options: DeviceIOServiceOptions = { apiKey: 'my-api-key' },
     ) => {
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
 
       fakeSessionChannel.newSession.mockResolvedValue(sessionId);
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await service.beforeSession(config, capabilities, [], '');
 
@@ -288,7 +288,7 @@ describe('TVLabsService', () => {
     it('leaves the body untouched before beforeSession() has run', () => {
       const config: Options.WebdriverIO = {};
 
-      new TVLabsService({ apiKey: 'my-api-key' }, {}, config);
+      new DeviceIOService({ apiKey: 'my-api-key' }, {}, config);
 
       const body = newSessionBody({ 'appium:platformName': 'iOS' });
       const transformed = config.transformRequest?.(sessionRequest(body));
@@ -499,10 +499,10 @@ describe('TVLabsService', () => {
   describe('Authorization header injection', () => {
     it('injects Authorization header when not present', () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
 
-      new TVLabsService(options, capabilities, config);
+      new DeviceIOService(options, capabilities, config);
 
       expect(config.headers).toBeDefined();
       expect(config.headers?.Authorization).toBe('Bearer my-api-key');
@@ -510,21 +510,21 @@ describe('TVLabsService', () => {
 
     it('does not override existing Authorization header', () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {
         headers: {
           Authorization: 'Bearer existing-token',
         },
       };
 
-      new TVLabsService(options, capabilities, config);
+      new DeviceIOService(options, capabilities, config);
 
       expect(config.headers?.Authorization).toBe('Bearer existing-token');
     });
 
     it('preserves other existing headers', () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {
         headers: {
           'X-Custom-Header': 'custom-value',
@@ -532,7 +532,7 @@ describe('TVLabsService', () => {
         },
       };
 
-      new TVLabsService(options, capabilities, config);
+      new DeviceIOService(options, capabilities, config);
 
       expect(config.headers).toEqual({
         'X-Custom-Header': 'custom-value',
@@ -545,30 +545,30 @@ describe('TVLabsService', () => {
   describe('lastRequestId', () => {
     it('returns undefined initially', () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       expect(service.lastRequestId()).toBeUndefined();
     });
 
     it('returns undefined when attachRequestId is false', () => {
       const options = { apiKey: 'my-api-key', attachRequestId: false };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       expect(service.lastRequestId()).toBeUndefined();
     });
 
     it('returns the last request ID after a request is transformed', () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       expect(service.lastRequestId()).toBeUndefined();
 
@@ -592,10 +592,10 @@ describe('TVLabsService', () => {
 
     it('returns the most recent request ID when multiple requests are made', () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       const requestInit1: RequestInit = { method: 'GET' };
       const transformedRequestInit1 = config.transformRequest?.(requestInit1);
@@ -628,12 +628,12 @@ describe('TVLabsService', () => {
 
   it('does not clobber existing values in headers', () => {
     const options = { apiKey: 'my-api-key' };
-    const capabilities: TVLabsCapabilities = {};
+    const capabilities: DeviceIOCapabilities = {};
     const config: Options.WebdriverIO = {};
 
-    const service = new TVLabsService(options, capabilities, config);
+    const service = new DeviceIOService(options, capabilities, config);
 
-    expect(service).toBeInstanceOf(TVLabsService);
+    expect(service).toBeInstanceOf(DeviceIOService);
     expect(config.transformRequest).toBeDefined();
     expect(config.transformRequest).toBeInstanceOf(Function);
 
@@ -654,7 +654,7 @@ describe('TVLabsService', () => {
 
   it('does not override existing transformRequest function', () => {
     const options = { apiKey: 'my-api-key' };
-    const capabilities: TVLabsCapabilities = {};
+    const capabilities: DeviceIOCapabilities = {};
     const config: Options.WebdriverIO = {
       transformRequest: (requestOptions: RequestInit) => {
         requestOptions.headers = {
@@ -665,9 +665,9 @@ describe('TVLabsService', () => {
       },
     };
 
-    const service = new TVLabsService(options, capabilities, config);
+    const service = new DeviceIOService(options, capabilities, config);
 
-    expect(service).toBeInstanceOf(TVLabsService);
+    expect(service).toBeInstanceOf(DeviceIOService);
     expect(config.transformRequest).toBeDefined();
     expect(config.transformRequest).toBeInstanceOf(Function);
 
@@ -687,9 +687,9 @@ describe('TVLabsService', () => {
     it('does not throw if no multi-remote capabilities are provided', () => {
       const options = { apiKey: 'my-api-key' };
       const config = {};
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       expect(() => service.onPrepare(config, [capabilities])).not.toThrow();
     });
@@ -702,7 +702,7 @@ describe('TVLabsService', () => {
         remoteTwo: { capabilities: {} },
       };
 
-      const service = new TVLabsService(options, {}, config);
+      const service = new DeviceIOService(options, {}, config);
 
       expect(() => service.onPrepare(config, capabilities)).toThrowError(
         'Multi-remote capabilities are not implemented. Contact Device.io support if you are interested in this feature.',
@@ -718,7 +718,7 @@ describe('TVLabsService', () => {
         remoteTwo: { capabilities: {} },
       };
 
-      const service = new TVLabsService(options, {}, config);
+      const service = new DeviceIOService(options, {}, config);
 
       expect(() => service.onPrepare(config, capabilities)).toThrowError(
         'Multi-remote capabilities are not implemented. Contact Device.io support if you are interested in this feature.',
@@ -734,7 +734,7 @@ describe('TVLabsService', () => {
       const cid = '';
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {
+      const capabilities: DeviceIOCapabilities = {
         'device:constraints': {
           platform_key: 'roku',
         },
@@ -743,7 +743,7 @@ describe('TVLabsService', () => {
 
       fakeSessionChannel.newSession.mockResolvedValue(sessionId);
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await service.beforeSession(config, capabilities, specs, cid);
 
@@ -759,7 +759,7 @@ describe('TVLabsService', () => {
       const config: Options.WebdriverIO = { logLevel: 'info' };
       const specs: string[] = [];
       const cid = '';
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const options = {
         apiKey: randomUUID(),
         retries: randomInt(1, 10),
@@ -767,7 +767,7 @@ describe('TVLabsService', () => {
         sessionEndpoint: randomUUID(),
       };
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await service.beforeSession(config, capabilities, specs, cid);
 
@@ -788,13 +788,13 @@ describe('TVLabsService', () => {
       const specs: string[] = [];
       const cid = '';
       const options = { apiKey: 'my-api-key', continueOnError: true };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
 
       fakeSessionChannel.newSession.mockRejectedValue(
         new SevereServiceError('Could not create a new session.'),
       );
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await expect(
         service.beforeSession(config, capabilities, specs, cid),
@@ -807,13 +807,13 @@ describe('TVLabsService', () => {
       const specs: string[] = [];
       const cid = '';
       const options = { apiKey: 'my-api-key', continueOnError: false };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
 
       fakeSessionChannel.newSession.mockRejectedValue(
         new SevereServiceError('Could not create a new session.'),
       );
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await expect(
         service.beforeSession(config, capabilities, specs, cid),
@@ -834,12 +834,12 @@ describe('TVLabsService', () => {
         buildEndpoint: 'wss://build.example.com',
         reconnectRetries: 3,
       };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
 
       fakeBuildChannel.uploadBuild.mockResolvedValue(buildId);
       fakeSessionChannel.newSession.mockResolvedValue(sessionId);
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await service.beforeSession(config, capabilities, specs, cid);
 
@@ -876,12 +876,12 @@ describe('TVLabsService', () => {
         buildPath,
         app: appSlug,
       };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
 
       fakeBuildChannel.uploadBuild.mockResolvedValue(buildId);
       fakeSessionChannel.newSession.mockResolvedValue(sessionId);
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await service.beforeSession(config, capabilities, specs, cid);
 
@@ -906,13 +906,13 @@ describe('TVLabsService', () => {
         buildPath,
         continueOnError: true,
       };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
 
       fakeBuildChannel.uploadBuild.mockRejectedValue(
         new SevereServiceError('Failed to upload build'),
       );
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await expect(
         service.beforeSession(config, capabilities, specs, cid),
@@ -940,11 +940,11 @@ describe('TVLabsService', () => {
         apiKey: 'my-api-key',
         // No buildPath provided
       };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
 
       fakeSessionChannel.newSession.mockResolvedValue(sessionId);
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await service.beforeSession(config, capabilities, specs, cid);
 
@@ -962,7 +962,7 @@ describe('TVLabsService', () => {
   describe('requestMetadata', () => {
     it('returns metadata for a single request ID', async () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
       const sessionId = randomUUID();
       const requestId = randomUUID();
@@ -976,7 +976,7 @@ describe('TVLabsService', () => {
         [requestId]: mockMetadata,
       });
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
       const result = await service.requestMetadata(sessionId, requestId);
 
       expect(fakeMetadataChannel.connect).toHaveBeenCalled();
@@ -989,7 +989,7 @@ describe('TVLabsService', () => {
 
     it('returns metadata for multiple request IDs', async () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
       const sessionId = randomUUID();
       const requestId1 = randomUUID();
@@ -1011,7 +1011,7 @@ describe('TVLabsService', () => {
         mockMetadataResponse,
       );
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
       const result = await service.requestMetadata(sessionId, [
         requestId1,
         requestId2,
@@ -1027,7 +1027,7 @@ describe('TVLabsService', () => {
 
     it('reuses metadata channel on subsequent calls', async () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
       const sessionId = randomUUID();
       const requestId1 = randomUUID();
@@ -1037,7 +1037,7 @@ describe('TVLabsService', () => {
         [requestId1]: { data: 'test1' },
       });
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await service.requestMetadata(sessionId, requestId1);
       expect(fakeMetadataChannel.connect).toHaveBeenCalledTimes(1);
@@ -1053,7 +1053,7 @@ describe('TVLabsService', () => {
 
     it('passes correct options to MetadataChannel constructor', async () => {
       const config: Options.WebdriverIO = { logLevel: 'debug' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const options = {
         apiKey: randomUUID(),
         reconnectRetries: randomInt(1, 10),
@@ -1066,7 +1066,7 @@ describe('TVLabsService', () => {
         [requestId]: {},
       });
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
       await service.requestMetadata(sessionId, requestId);
 
       expect(vi.mocked(MetadataChannel)).toHaveBeenCalledWith(
@@ -1079,7 +1079,7 @@ describe('TVLabsService', () => {
 
     it('uses default sessionEndpoint when not provided', async () => {
       const config: Options.WebdriverIO = {};
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const options = {
         apiKey: 'test-api-key',
       };
@@ -1090,7 +1090,7 @@ describe('TVLabsService', () => {
         [requestId]: {},
       });
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
       await service.requestMetadata(sessionId, requestId);
 
       expect(vi.mocked(MetadataChannel)).toHaveBeenCalledWith(
@@ -1105,14 +1105,14 @@ describe('TVLabsService', () => {
   describe('sessionMetadata', () => {
     it('returns session metadata', async () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
       const sessionId = randomUUID();
       const mockResponse = sessionMetadataResponse({ id: sessionId });
 
       vi.mocked(getSessionMetadata).mockResolvedValue(mockResponse);
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
       const result = await service.sessionMetadata(sessionId);
 
       expect(result).toEqual(mockResponse);
@@ -1131,7 +1131,7 @@ describe('TVLabsService', () => {
         apiKey: 'my-api-key',
         apiBaseUrl: 'https://custom.tvlabs.ai',
       };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = { logLevel: 'debug' };
       const sessionId = randomUUID();
 
@@ -1139,7 +1139,7 @@ describe('TVLabsService', () => {
         sessionMetadataResponse(),
       );
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
       await service.sessionMetadata(sessionId);
 
       expect(getSessionMetadata).toHaveBeenCalledWith(
@@ -1154,7 +1154,7 @@ describe('TVLabsService', () => {
 
     it('propagates errors from getSessionMetadata', async () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
       const sessionId = randomUUID();
 
@@ -1162,7 +1162,7 @@ describe('TVLabsService', () => {
         new Error('API request failed: 404 Not Found'),
       );
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       await expect(service.sessionMetadata(sessionId)).rejects.toThrow(
         'API request failed: 404 Not Found',
@@ -1172,14 +1172,14 @@ describe('TVLabsService', () => {
 
   describe('disconnect', () => {
     it('is a no-op when no metadata channel was opened', async () => {
-      const service = new TVLabsService({ apiKey: 'my-api-key' }, {}, {});
+      const service = new DeviceIOService({ apiKey: 'my-api-key' }, {}, {});
 
       await expect(service.disconnect()).resolves.toBeUndefined();
       expect(fakeMetadataChannel.disconnect).not.toHaveBeenCalled();
     });
 
     it('closes the metadata channel after requestMetadata opened it', async () => {
-      const service = new TVLabsService({ apiKey: 'my-api-key' }, {}, {});
+      const service = new DeviceIOService({ apiKey: 'my-api-key' }, {}, {});
       const sessionId = randomUUID();
       const requestId = randomUUID();
 
@@ -1200,24 +1200,24 @@ describe('TVLabsService', () => {
   });
 
   describe('fromSession', () => {
-    it('returns a TVLabsService instance synchronously', () => {
+    it('returns a DeviceIOService instance synchronously', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
 
-      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = DeviceIOService.fromSession(sessionId, options, wdOpts);
 
-      expect(service).toBeInstanceOf(TVLabsService);
+      expect(service).toBeInstanceOf(DeviceIOService);
     });
 
     it('does not mutate device:session_id on the capabilities', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
 
-      TVLabsService.fromSession(sessionId, options, wdOpts);
+      DeviceIOService.fromSession(sessionId, options, wdOpts);
 
       expect(capabilities['device:session_id']).toBeUndefined();
     });
@@ -1225,10 +1225,10 @@ describe('TVLabsService', () => {
     it('installs transformRequest on wdOpts for request-id tracking', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
 
-      TVLabsService.fromSession(sessionId, options, wdOpts);
+      DeviceIOService.fromSession(sessionId, options, wdOpts);
 
       expect(typeof wdOpts.transformRequest).toBe('function');
     });
@@ -1236,10 +1236,10 @@ describe('TVLabsService', () => {
     it('does not attach a request id when attachRequestId is false', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key', attachRequestId: false };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
 
-      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = DeviceIOService.fromSession(sessionId, options, wdOpts);
 
       const transformed = wdOpts.transformRequest?.({ method: 'GET' });
 
@@ -1250,10 +1250,10 @@ describe('TVLabsService', () => {
     it('injects Authorization header on wdOpts', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
 
-      TVLabsService.fromSession(sessionId, options, wdOpts);
+      DeviceIOService.fromSession(sessionId, options, wdOpts);
 
       expect(wdOpts.headers?.Authorization).toBe('Bearer my-api-key');
     });
@@ -1261,10 +1261,10 @@ describe('TVLabsService', () => {
     it('lastRequestId returns the most recent ID after transformRequest fires', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
 
-      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = DeviceIOService.fromSession(sessionId, options, wdOpts);
 
       expect(service.lastRequestId()).toBeUndefined();
 
@@ -1286,20 +1286,20 @@ describe('TVLabsService', () => {
     it('appiumSessionId getter returns the bound Appium session ID', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
 
-      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = DeviceIOService.fromSession(sessionId, options, wdOpts);
 
       expect(service.rehydratedSessionId).toBe(sessionId);
     });
 
     it('appiumSessionId getter returns undefined for classic instances', () => {
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const config: Options.WebdriverIO = {};
 
-      const service = new TVLabsService(options, capabilities, config);
+      const service = new DeviceIOService(options, capabilities, config);
 
       expect(service.rehydratedSessionId).toBeUndefined();
     });
@@ -1307,10 +1307,10 @@ describe('TVLabsService', () => {
     it('beforeSession throws on a rehydrated instance', async () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
 
-      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = DeviceIOService.fromSession(sessionId, options, wdOpts);
 
       await expect(
         service.beforeSession(wdOpts, capabilities, [], ''),
@@ -1324,7 +1324,7 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const requestId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
       const mockMetadata = {
         path: '/session/123/element',
@@ -1336,7 +1336,7 @@ describe('TVLabsService', () => {
         [requestId]: mockMetadata,
       });
 
-      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = DeviceIOService.fromSession(sessionId, options, wdOpts);
       const result = await service.requestMetadata(sessionId, requestId);
 
       expect(fakeMetadataChannel.connect).toHaveBeenCalled();
@@ -1350,13 +1350,13 @@ describe('TVLabsService', () => {
     it('sessionMetadata works without beforeSession', async () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
       const mockResponse = sessionMetadataResponse({ id: sessionId });
 
       vi.mocked(getSessionMetadata).mockResolvedValue(mockResponse);
 
-      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = DeviceIOService.fromSession(sessionId, options, wdOpts);
       const result = await service.sessionMetadata(sessionId);
 
       expect(result).toEqual(mockResponse);
@@ -1376,10 +1376,10 @@ describe('TVLabsService', () => {
       const wdOpts: Options.WebdriverIO = {};
 
       expect(() =>
-        TVLabsService.fromSession(sessionId, options, wdOpts),
+        DeviceIOService.fromSession(sessionId, options, wdOpts),
       ).toThrow(SevereServiceError);
       expect(() =>
-        TVLabsService.fromSession(sessionId, options, wdOpts),
+        DeviceIOService.fromSession(sessionId, options, wdOpts),
       ).toThrow('wdOpts.capabilities must be a capabilities object');
     });
 
@@ -1389,17 +1389,17 @@ describe('TVLabsService', () => {
       const wdOpts = { capabilities: [] } as unknown as Options.WebdriverIO;
 
       expect(() =>
-        TVLabsService.fromSession(sessionId, options, wdOpts),
+        DeviceIOService.fromSession(sessionId, options, wdOpts),
       ).toThrow(SevereServiceError);
     });
 
     it('disconnect() is a no-op on a rehydrated instance with no open channel', async () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
       const wdOpts: FromSessionOptions = { capabilities };
 
-      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = DeviceIOService.fromSession(sessionId, options, wdOpts);
 
       await expect(service.disconnect()).resolves.toBeUndefined();
       expect(fakeMetadataChannel.disconnect).not.toHaveBeenCalled();
@@ -1408,7 +1408,7 @@ describe('TVLabsService', () => {
     it('chains a user-provided transformRequest when attachRequestId is true', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
-      const capabilities: TVLabsCapabilities = {};
+      const capabilities: DeviceIOCapabilities = {};
 
       const userHeader = 'x-my-header';
       const userHeaderValue = 'my-value';
@@ -1423,7 +1423,7 @@ describe('TVLabsService', () => {
         }),
       };
 
-      const service = TVLabsService.fromSession(sessionId, options, wdOpts);
+      const service = DeviceIOService.fromSession(sessionId, options, wdOpts);
 
       // Invoke the installed transformRequest hook
       const result = wdOpts.transformRequest!({} as RequestInit) as {
@@ -1433,7 +1433,7 @@ describe('TVLabsService', () => {
       // The user's header must be present (user's transformRequest was called)
       expect(result.headers[userHeader]).toBe(userHeaderValue);
 
-      // The x-request-id header must also be present (TVLabs hook ran)
+      // The x-request-id header must also be present (Device.io hook ran)
       expect(result.headers['x-request-id']).toBeDefined();
 
       // lastRequestId() must match what was injected

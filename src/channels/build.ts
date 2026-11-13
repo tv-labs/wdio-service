@@ -7,9 +7,9 @@ import * as crypto from 'node:crypto';
 import { BaseChannel } from './base.js';
 
 import type {
-  TVLabsExtractBuildInfoResponse,
-  TVLabsRequestUploadUrlResponse,
-  TVLabsBuildMetadata,
+  DeviceIOExtractBuildInfoResponse,
+  DeviceIORequestUploadUrlResponse,
+  DeviceIOBuildMetadata,
   LogLevel,
 } from '../types.js';
 
@@ -84,11 +84,11 @@ export class BuildChannel extends BaseChannel {
   }
 
   private async requestUploadUrl(
-    metadata: TVLabsBuildMetadata,
+    metadata: DeviceIOBuildMetadata,
     appSlug: string | undefined,
   ) {
     try {
-      return await this.push<TVLabsRequestUploadUrlResponse>(
+      return await this.push<DeviceIORequestUploadUrlResponse>(
         this.lobbyTopic,
         'request_upload_url',
         { metadata, application_slug: appSlug },
@@ -102,7 +102,7 @@ export class BuildChannel extends BaseChannel {
   private async uploadToUrl(
     url: string,
     filePath: string,
-    metadata: TVLabsBuildMetadata,
+    metadata: DeviceIOBuildMetadata,
   ): Promise<void> {
     try {
       const response = await fetch(url, {
@@ -133,7 +133,7 @@ export class BuildChannel extends BaseChannel {
     this.log.info('Processing uploaded build...');
 
     try {
-      return await this.push<TVLabsExtractBuildInfoResponse>(
+      return await this.push<DeviceIOExtractBuildInfoResponse>(
         this.lobbyTopic,
         'extract_build_info',
         {},
@@ -146,7 +146,7 @@ export class BuildChannel extends BaseChannel {
 
   private async getFileMetadata(
     buildPath: string,
-  ): Promise<TVLabsBuildMetadata> {
+  ): Promise<DeviceIOBuildMetadata> {
     const filename = path.basename(buildPath);
     const size = fs.statSync(buildPath).size;
     const type = this.detectMimeType(filename);

@@ -1,11 +1,11 @@
 import { apiRequest } from './client.js';
-import type { ApiContext, TVLabsSessionMetadataResponse } from '../types.js';
+import type { ApiContext, DeviceIOSessionMetadataResponse } from '../types.js';
 
 export async function getSessionMetadata(
   context: ApiContext,
   sessionId: string,
-): Promise<TVLabsSessionMetadataResponse> {
-  return apiRequest<TVLabsSessionMetadataResponse>(
+): Promise<DeviceIOSessionMetadataResponse> {
+  return apiRequest<DeviceIOSessionMetadataResponse>(
     context,
     `/api/v1/sessions/appium/${sessionId}`,
   );

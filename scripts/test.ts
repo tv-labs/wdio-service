@@ -1,7 +1,7 @@
 import { remote } from 'webdriverio';
-import { TVLabsService } from '../src/index.ts';
+import { DeviceIOService } from '../src/index.ts';
 
-const apiKey = process.env.TVLABS_API_TOKEN;
+const apiKey = process.env.DEVICEIO_API_TOKEN;
 
 const capabilities = {
   'device:build': '00000000-0000-0000-0000-000000000000',
@@ -21,7 +21,7 @@ const serviceOpts = {
   sessionEndpoint: 'ws://localhost:4000/appium',
 };
 
-const service = new TVLabsService(serviceOpts, capabilities, wdOpts);
+const service = new DeviceIOService(serviceOpts, capabilities, wdOpts);
 
 async function runTest() {
   await service.beforeSession(wdOpts, capabilities, [], '');
