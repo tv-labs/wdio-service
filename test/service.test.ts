@@ -80,10 +80,10 @@ describe('TVLabsService', () => {
   it('can be instantiated', () => {
     const options = { apiKey: 'my-api-key' };
     const capabilities: TVLabsCapabilities = {
-      'tvlabs:constraints': {
+      'device:constraints': {
         platform_key: 'roku',
       },
-      'tvlabs:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
+      'device:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
     };
     const config = {};
 
@@ -171,7 +171,7 @@ describe('TVLabsService', () => {
       return service;
     };
 
-    it('re-attaches the session id when the capabilities have absent tvlabs:session_id', async () => {
+    it('re-attaches the session id when the capabilities have absent device:session_id', async () => {
       const config: Options.WebdriverIO = {};
 
       await startedService(config);
@@ -186,6 +186,7 @@ describe('TVLabsService', () => {
 
       expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
         'appium:platformName': 'iOS',
+        'device:session_id': sessionId,
         'tvlabs:session_id': sessionId,
       });
     });
@@ -217,6 +218,7 @@ describe('TVLabsService', () => {
       const transformed = config.transformRequest?.(sessionRequest(body));
 
       expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'device:session_id': sessionId,
         'tvlabs:session_id': sessionId,
       });
     });
@@ -226,7 +228,10 @@ describe('TVLabsService', () => {
 
       await startedService(config);
 
-      const body = newSessionBody({ 'tvlabs:session_id': sessionId });
+      const body = newSessionBody({
+        'device:session_id': sessionId,
+        'tvlabs:session_id': sessionId,
+      });
       const requestInit = sessionRequest(body);
 
       const transformed = config.transformRequest?.(requestInit);
@@ -240,12 +245,13 @@ describe('TVLabsService', () => {
       await startedService(config);
 
       const requestInit = sessionRequest(
-        newSessionBody({ 'tvlabs:session_id': 'some-other-session' }),
+        newSessionBody({ 'device:session_id': 'some-other-session' }),
       );
 
       const transformed = config.transformRequest?.(requestInit);
 
       expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'device:session_id': sessionId,
         'tvlabs:session_id': sessionId,
       });
     });
@@ -263,6 +269,7 @@ describe('TVLabsService', () => {
       );
 
       expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'device:session_id': sessionId,
         'tvlabs:session_id': sessionId,
       });
     });
@@ -303,6 +310,7 @@ describe('TVLabsService', () => {
       );
 
       expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'device:session_id': sessionId,
         'tvlabs:session_id': sessionId,
       });
     });
@@ -341,6 +349,7 @@ describe('TVLabsService', () => {
       );
 
       expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'device:session_id': nextSessionId,
         'tvlabs:session_id': nextSessionId,
       });
     });
@@ -392,6 +401,12 @@ describe('TVLabsService', () => {
         const transformed = config.transformRequest?.(requestInit);
         const json = jsonOf(transformed);
 
+        expect(json.capabilities.alwaysMatch['device:session_id']).toEqual(
+          sessionId,
+        );
+        expect(json.desiredCapabilities['device:session_id']).toEqual(
+          sessionId,
+        );
         expect(json.capabilities.alwaysMatch['tvlabs:session_id']).toEqual(
           sessionId,
         );
@@ -413,6 +428,7 @@ describe('TVLabsService', () => {
         // `got` serializes `json` on send, so no `body` should be introduced.
         expect(transformed?.body).toBeUndefined();
         expect(payload.capabilities.alwaysMatch).toEqual({
+          'device:session_id': sessionId,
           'tvlabs:session_id': sessionId,
         });
       });
@@ -445,6 +461,7 @@ describe('TVLabsService', () => {
 
         expect(payload.capabilities.alwaysMatch).toEqual({
           'appium:platformName': 'iOS',
+          'device:session_id': sessionId,
           'tvlabs:session_id': sessionId,
         });
       });
@@ -473,6 +490,7 @@ describe('TVLabsService', () => {
 
       expect(original).toHaveBeenCalled();
       expect(bodyOf(transformed).capabilities.alwaysMatch).toEqual({
+        'device:session_id': sessionId,
         'tvlabs:session_id': sessionId,
       });
     });
@@ -687,7 +705,7 @@ describe('TVLabsService', () => {
       const service = new TVLabsService(options, {}, config);
 
       expect(() => service.onPrepare(config, capabilities)).toThrowError(
-        'Multi-remote capabilities are not implemented. Contact TV Labs support if you are interested in this feature.',
+        'Multi-remote capabilities are not implemented. Contact Device.io support if you are interested in this feature.',
       );
       expect(vi.mocked(process).exit).not.toHaveBeenCalledWith(1);
     });
@@ -703,7 +721,7 @@ describe('TVLabsService', () => {
       const service = new TVLabsService(options, {}, config);
 
       expect(() => service.onPrepare(config, capabilities)).toThrowError(
-        'Multi-remote capabilities are not implemented. Contact TV Labs support if you are interested in this feature.',
+        'Multi-remote capabilities are not implemented. Contact Device.io support if you are interested in this feature.',
       );
       expect(vi.mocked(process).exit).toHaveBeenCalledWith(1);
     });
@@ -717,10 +735,10 @@ describe('TVLabsService', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {
-        'tvlabs:constraints': {
+        'device:constraints': {
           platform_key: 'roku',
         },
-        'tvlabs:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
+        'device:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
       };
 
       fakeSessionChannel.newSession.mockResolvedValue(sessionId);
@@ -734,7 +752,7 @@ describe('TVLabsService', () => {
         capabilities,
         expect.any(Number),
       );
-      expect(capabilities['tvlabs:session_id']).toEqual(sessionId);
+      expect(capabilities['device:session_id']).toEqual(sessionId);
     });
 
     it('passes set options to the channel', async () => {
@@ -839,7 +857,9 @@ describe('TVLabsService', () => {
       );
       expect(fakeBuildChannel.disconnect).toHaveBeenCalled();
 
+      expect(capabilities['device:session_id']).toEqual(sessionId);
       expect(capabilities['tvlabs:session_id']).toEqual(sessionId);
+      expect(capabilities['device:build']).toEqual(buildId);
       expect(capabilities['tvlabs:build']).toEqual(buildId);
     });
 
@@ -870,7 +890,9 @@ describe('TVLabsService', () => {
         appSlug,
       );
 
+      expect(capabilities['device:session_id']).toEqual(sessionId);
       expect(capabilities['tvlabs:session_id']).toEqual(sessionId);
+      expect(capabilities['device:build']).toEqual(buildId);
       expect(capabilities['tvlabs:build']).toEqual(buildId);
     });
 
@@ -903,7 +925,9 @@ describe('TVLabsService', () => {
       expect(fakeSessionChannel.connect).not.toHaveBeenCalled();
       expect(fakeSessionChannel.newSession).not.toHaveBeenCalled();
 
+      expect(capabilities['device:session_id']).toBeUndefined();
       expect(capabilities['tvlabs:session_id']).toBeUndefined();
+      expect(capabilities['device:build']).toBeUndefined();
       expect(capabilities['tvlabs:build']).toBeUndefined();
     });
 
@@ -928,7 +952,9 @@ describe('TVLabsService', () => {
       expect(fakeBuildChannel.connect).not.toHaveBeenCalled();
       expect(fakeBuildChannel.uploadBuild).not.toHaveBeenCalled();
 
+      expect(capabilities['device:session_id']).toEqual(sessionId);
       expect(capabilities['tvlabs:session_id']).toEqual(sessionId);
+      expect(capabilities['device:build']).toBeUndefined();
       expect(capabilities['tvlabs:build']).toBeUndefined();
     });
   });
@@ -1185,7 +1211,7 @@ describe('TVLabsService', () => {
       expect(service).toBeInstanceOf(TVLabsService);
     });
 
-    it('does not mutate tvlabs:session_id on the capabilities', () => {
+    it('does not mutate device:session_id on the capabilities', () => {
       const sessionId = randomUUID();
       const options = { apiKey: 'my-api-key' };
       const capabilities: TVLabsCapabilities = {};
@@ -1193,7 +1219,7 @@ describe('TVLabsService', () => {
 
       TVLabsService.fromSession(sessionId, options, wdOpts);
 
-      expect(capabilities['tvlabs:session_id']).toBeUndefined();
+      expect(capabilities['device:session_id']).toBeUndefined();
     });
 
     it('installs transformRequest on wdOpts for request-id tracking', () => {

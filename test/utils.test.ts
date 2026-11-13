@@ -8,13 +8,13 @@ const packageJson = await fs.readFile(
 );
 const packageObject = JSON.parse(packageJson);
 
-describe('TV Labs Utils', () => {
+describe('Device.io Utils', () => {
   it('can get the service version', async () => {
     expect(getServiceVersion()).not.toBe('unknown');
     expect(getServiceVersion()).toBe(packageObject.version);
   });
 
   it('can get the service name', async () => {
-    expect(getServiceName()).toBe('@tvlabs/wdio-service');
+    expect(getServiceName()).toBe('@deviceio/wdio-service');
   });
 });

@@ -124,7 +124,7 @@ describe('Logger', () => {
 
   describe('WebSocket error scenario', () => {
     it('should log WebSocket errors like console.log does', () => {
-      const logger = new Logger('@tvlabs/wdio-channel', 'debug');
+      const logger = new Logger('@deviceio/wdio-channel', 'debug');
       const wsError = new Error('Unexpected server response: 403');
 
       // Simulate the WebSocket error logging
@@ -137,7 +137,7 @@ describe('Logger', () => {
       // Should contain log level
       expect(logCall).toContain('ERROR');
       // Should contain logger name
-      expect(logCall).toContain('@tvlabs/wdio-channel');
+      expect(logCall).toContain('@deviceio/wdio-channel');
       // Should contain the message
       expect(logCall).toContain('Socket error:');
       // Should contain the full error with stack trace

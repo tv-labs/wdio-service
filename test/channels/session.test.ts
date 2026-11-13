@@ -50,7 +50,7 @@ describe('Session Channel', () => {
         params: {
           api_key: fakeApiKey,
           service_version: expect.not.stringMatching('unknown'),
-          service_name: '@tvlabs/wdio-service',
+          service_name: '@deviceio/wdio-service',
         },
       }),
     );
@@ -88,10 +88,10 @@ describe('Session Channel', () => {
 
     const result = await channel.newSession(
       {
-        'tvlabs:constraints': {
+        'device:constraints': {
           platform_key: 'roku',
         },
-        'tvlabs:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
+        'device:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
       },
       5,
       0,
@@ -102,10 +102,10 @@ describe('Session Channel', () => {
       'requests:create',
       expect.objectContaining({
         capabilities: {
-          'tvlabs:constraints': {
+          'device:constraints': {
             platform_key: 'roku',
           },
-          'tvlabs:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
+          'device:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
         },
       }),
     );
@@ -137,10 +137,10 @@ describe('Session Channel', () => {
 
   it('raises on push timeout', async () => {
     const capabilities = {
-      'tvlabs:constraints': {
+      'device:constraints': {
         platform_key: 'roku',
       },
-      'tvlabs:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
+      'device:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
     };
 
     const channel = new SessionChannel(
@@ -174,10 +174,10 @@ describe('Session Channel', () => {
     await expect(
       channel.newSession(
         {
-          'tvlabs:constraints': {
+          'device:constraints': {
             platform_key: 'roku',
           },
-          'tvlabs:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
+          'device:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
         },
         retries,
         0,
@@ -210,10 +210,10 @@ describe('Session Channel', () => {
     await expect(
       channel.newSession(
         {
-          'tvlabs:constraints': {
+          'device:constraints': {
             platform_key: 'roku',
           },
-          'tvlabs:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
+          'device:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
         },
         retries,
         0,
@@ -259,10 +259,10 @@ describe('Session Channel', () => {
     await expect(
       channel.newSession(
         {
-          'tvlabs:constraints': {
+          'device:constraints': {
             platform_key: 'roku',
           },
-          'tvlabs:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
+          'device:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
         },
         retries,
         0,
@@ -295,10 +295,10 @@ describe('Session Channel', () => {
     await expect(
       channel.newSession(
         {
-          'tvlabs:constraints': {
+          'device:constraints': {
             platform_key: 'roku',
           },
-          'tvlabs:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
+          'device:build': '6277d0d7-71de-4f72-9427-aaaf831e0122',
         },
         retries,
         0,

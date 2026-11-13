@@ -6,7 +6,7 @@ export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const log = new Logger('@tvlabs/api-client', context.logLevel ?? 'info');
+  const log = new Logger('@deviceio/api-client', context.logLevel ?? 'info');
   const url = `${context.baseUrl}${path}`;
   const method = options.method ?? 'GET';
 

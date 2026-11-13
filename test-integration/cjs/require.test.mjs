@@ -73,7 +73,7 @@ describe('CJS Integration Tests', () => {
       expect(service).toBeInstanceOf(TVLabsService);
     });
 
-    it('should not mutate tvlabs:session_id on capabilities', () => {
+    it('should not mutate device:session_id on capabilities', () => {
       const capabilities = {};
       const wdOpts = { capabilities, logLevel: 'silent' };
 
@@ -83,7 +83,7 @@ describe('CJS Integration Tests', () => {
         wdOpts,
       );
 
-      expect(capabilities['tvlabs:session_id']).toBeUndefined();
+      expect(capabilities['device:session_id']).toBeUndefined();
     });
 
     it('should install transformRequest on wdOpts', () => {
