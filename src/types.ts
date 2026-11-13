@@ -2,7 +2,7 @@ import type { Capabilities } from '@wdio/types';
 
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
 
-export type TVLabsServiceOptions = {
+export type DeviceIOServiceOptions = {
   apiKey: string;
   sessionEndpoint?: string;
   buildEndpoint?: string;
@@ -23,7 +23,7 @@ type LegacyCapabilityKeys = {
   device_timeout: number;
 };
 
-export type TVLabsCapabilities =
+export type DeviceIOCapabilities =
   Capabilities.RequestedStandaloneCapabilities & {
     'device:session_id'?: string;
     'device:build'?: string;
@@ -66,11 +66,11 @@ export type WebdriverSessionCreatePayload = {
  */
 export type WebdriverTransformableRequest = RequestInit & { json?: unknown };
 
-export type TVLabsSessionRequestEventHandler = (
-  response: TVLabsSessionRequestUpdate,
+export type DeviceIOSessionRequestEventHandler = (
+  response: DeviceIOSessionRequestUpdate,
 ) => void;
 
-export type TVLabsSessionRequestUpdate = {
+export type DeviceIOSessionRequestUpdate = {
   request_id: string;
   session_id: string;
   reason: string;
@@ -84,7 +84,7 @@ export type ResponseAnyValue =
   | ResponseAnyValue[]
   | { [key: string]: ResponseAnyValue };
 
-export type TVLabsSessionRequestResponse = {
+export type DeviceIOSessionRequestResponse = {
   status: number;
   path: string;
   request_id: string;
@@ -97,27 +97,27 @@ export type TVLabsSessionRequestResponse = {
   video_end_time: number | null;
 };
 
-export type TVLabsSocketParams = TVLabsServiceInfo & {
+export type DeviceIOSocketParams = DeviceIOServiceInfo & {
   api_key: string;
 };
 
-export type TVLabsServiceInfo = {
+export type DeviceIOServiceInfo = {
   service_version: string;
   service_name: string;
 };
 
-export type TVLabsRequestUploadUrlResponse = {
+export type DeviceIORequestUploadUrlResponse = {
   url: string;
   build_id: string;
   existing: boolean;
   application_id?: string;
 };
 
-export type TVLabsExtractBuildInfoResponse = {
+export type DeviceIOExtractBuildInfoResponse = {
   application_id: string;
 };
 
-export type TVLabsBuildMetadata = {
+export type DeviceIOBuildMetadata = {
   filename: string;
   type: string;
   size: number;
@@ -136,10 +136,10 @@ export type ApiContext = {
   logLevel?: LogLevel;
 };
 
-export type TVLabsSessionMetadataResponse = {
+export type DeviceIOSessionMetadataResponse = {
   data: {
     id: string;
-    type: TVLabsSessionType;
+    type: DeviceIOSessionType;
     status: string;
     team_id: string;
     start_time: string;
@@ -168,7 +168,7 @@ export type TVLabsSessionMetadataResponse = {
         name: string;
       };
       unit_id: string;
-      type: TVLabsDeviceType;
+      type: DeviceIODeviceType;
     } | null;
     recording: {
       duration: number;
@@ -193,7 +193,7 @@ export type TVLabsSessionMetadataResponse = {
   };
 };
 
-export type TVLabsRequestMetadata = {
+export type DeviceIORequestMetadata = {
   status: number;
   path: string;
   method: HTTPMethod;
@@ -215,9 +215,61 @@ export type HTTPMethod =
   | 'head'
   | 'options';
 
-export type TVLabsSessionType = 'appium' | 'user' | 'automation';
-export type TVLabsDeviceType = 'tv' | 'stb' | 'mobile' | 'browser';
+export type DeviceIOSessionType = 'appium' | 'user' | 'automation';
+export type DeviceIODeviceType = 'tv' | 'stb' | 'mobile' | 'browser';
 
-export type TVLabsRequestMetadataResponse = {
-  [request_id: string]: TVLabsRequestMetadata;
+export type DeviceIORequestMetadataResponse = {
+  [request_id: string]: DeviceIORequestMetadata;
 };
+
+/**
+ * Deprecated `TVLabs*` aliases for the `DeviceIO*` types above. They exist so
+ * existing consumers keep compiling and will be removed in the next major
+ * release.
+ */
+
+/** @deprecated Use `DeviceIOServiceOptions`. */
+export type TVLabsServiceOptions = DeviceIOServiceOptions;
+
+/** @deprecated Use `DeviceIOCapabilities`. */
+export type TVLabsCapabilities = DeviceIOCapabilities;
+
+/** @deprecated Use `DeviceIOSessionRequestEventHandler`. */
+export type TVLabsSessionRequestEventHandler =
+  DeviceIOSessionRequestEventHandler;
+
+/** @deprecated Use `DeviceIOSessionRequestUpdate`. */
+export type TVLabsSessionRequestUpdate = DeviceIOSessionRequestUpdate;
+
+/** @deprecated Use `DeviceIOSessionRequestResponse`. */
+export type TVLabsSessionRequestResponse = DeviceIOSessionRequestResponse;
+
+/** @deprecated Use `DeviceIOSocketParams`. */
+export type TVLabsSocketParams = DeviceIOSocketParams;
+
+/** @deprecated Use `DeviceIOServiceInfo`. */
+export type TVLabsServiceInfo = DeviceIOServiceInfo;
+
+/** @deprecated Use `DeviceIORequestUploadUrlResponse`. */
+export type TVLabsRequestUploadUrlResponse = DeviceIORequestUploadUrlResponse;
+
+/** @deprecated Use `DeviceIOExtractBuildInfoResponse`. */
+export type TVLabsExtractBuildInfoResponse = DeviceIOExtractBuildInfoResponse;
+
+/** @deprecated Use `DeviceIOBuildMetadata`. */
+export type TVLabsBuildMetadata = DeviceIOBuildMetadata;
+
+/** @deprecated Use `DeviceIOSessionMetadataResponse`. */
+export type TVLabsSessionMetadataResponse = DeviceIOSessionMetadataResponse;
+
+/** @deprecated Use `DeviceIORequestMetadata`. */
+export type TVLabsRequestMetadata = DeviceIORequestMetadata;
+
+/** @deprecated Use `DeviceIOSessionType`. */
+export type TVLabsSessionType = DeviceIOSessionType;
+
+/** @deprecated Use `DeviceIODeviceType`. */
+export type TVLabsDeviceType = DeviceIODeviceType;
+
+/** @deprecated Use `DeviceIORequestMetadataResponse`. */
+export type TVLabsRequestMetadataResponse = DeviceIORequestMetadataResponse;

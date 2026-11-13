@@ -2,7 +2,7 @@ import { type Channel } from 'phoenix';
 import { SevereServiceError } from 'webdriverio';
 import { BaseChannel } from './base.js';
 
-import type { LogLevel, TVLabsRequestMetadataResponse } from '../types.js';
+import type { LogLevel, DeviceIORequestMetadataResponse } from '../types.js';
 
 export class MetadataChannel extends BaseChannel {
   private lobbyTopic: Channel;
@@ -50,13 +50,13 @@ export class MetadataChannel extends BaseChannel {
   async getRequestMetadata(
     appiumSessionId: string,
     requestIds: string[],
-  ): Promise<TVLabsRequestMetadataResponse> {
+  ): Promise<DeviceIORequestMetadataResponse> {
     this.log.debug(
       `Fetching metadata for session ${appiumSessionId}, requests: ${requestIds.join(', ')}`,
     );
 
     try {
-      const response = await this.push<TVLabsRequestMetadataResponse>(
+      const response = await this.push<DeviceIORequestMetadataResponse>(
         this.lobbyTopic,
         'appium_request_metadata',
         {

@@ -1,7 +1,7 @@
-import { TVLabsServiceInfo } from './types.js';
+import { DeviceIOServiceInfo } from './types.js';
 import packageJson from '../package.json';
 
-export function getServiceInfo(): TVLabsServiceInfo {
+export function getServiceInfo(): DeviceIOServiceInfo {
   return {
     service_name: getServiceName(),
     service_version: getServiceVersion(),

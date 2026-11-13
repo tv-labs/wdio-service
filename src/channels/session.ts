@@ -3,9 +3,9 @@ import { SevereServiceError } from 'webdriverio';
 import { BaseChannel } from './base.js';
 
 import type {
-  TVLabsCapabilities,
-  TVLabsSessionRequestEventHandler,
-  TVLabsSessionRequestResponse,
+  DeviceIOCapabilities,
+  DeviceIOSessionRequestEventHandler,
+  DeviceIOSessionRequestResponse,
   LogLevel,
 } from '../types.js';
 
@@ -64,7 +64,7 @@ export class SessionChannel extends BaseChannel {
   }
 
   async newSession(
-    capabilities: TVLabsCapabilities,
+    capabilities: DeviceIOCapabilities,
     maxRetries: number,
     retry = 0,
   ): Promise<string> {
@@ -79,7 +79,7 @@ export class SessionChannel extends BaseChannel {
   }
 
   private async handleRetry(
-    capabilities: TVLabsCapabilities,
+    capabilities: DeviceIOCapabilities,
     maxRetries: number,
     retry: number,
   ): Promise<string> {
@@ -102,43 +102,44 @@ export class SessionChannel extends BaseChannel {
     return new Promise<string>((res, rej) => {
       this.requestTopic = this.socket.channel(`requests:${requestId}`);
 
-      const eventHandlers: Record<string, TVLabsSessionRequestEventHandler> = {
-        // Information events
-        [this.events.REQUEST_MATCHING]: ({ request_id }) => {
-          this.log.info(`Session request ${request_id} matching...`);
-        },
-        [this.events.REQUEST_FILLED]: ({ session_id, request_id }) => {
-          this.log.info(
-            `Session request ${request_id} filled: ${this.tvlabsSessionLink(session_id)}`,
-          );
+      const eventHandlers: Record<string, DeviceIOSessionRequestEventHandler> =
+        {
+          // Information events
+          [this.events.REQUEST_MATCHING]: ({ request_id }) => {
+            this.log.info(`Session request ${request_id} matching...`);
+          },
+          [this.events.REQUEST_FILLED]: ({ session_id, request_id }) => {
+            this.log.info(
+              `Session request ${request_id} filled: ${this.deviceIOSessionLink(session_id)}`,
+            );
 
-          this.log.info('Waiting for device to be ready...');
-        },
+            this.log.info('Waiting for device to be ready...');
+          },
 
-        // Failure events
-        [this.events.SESSION_FAILED]: ({ session_id, reason }) => {
-          this.log.error(`Session ${session_id} failed, reason: ${reason}`);
-          rej(reason);
-        },
-        [this.events.REQUEST_CANCELED]: ({ request_id, reason }) => {
-          this.log.info(
-            `Session request ${request_id} canceled, reason: ${reason}`,
-          );
-          rej(reason);
-        },
-        [this.events.REQUEST_FAILED]: ({ request_id, reason }) => {
-          this.log.info(
-            `Session request ${request_id} failed, reason: ${reason}`,
-          );
-          rej(reason);
-        },
+          // Failure events
+          [this.events.SESSION_FAILED]: ({ session_id, reason }) => {
+            this.log.error(`Session ${session_id} failed, reason: ${reason}`);
+            rej(reason);
+          },
+          [this.events.REQUEST_CANCELED]: ({ request_id, reason }) => {
+            this.log.info(
+              `Session request ${request_id} canceled, reason: ${reason}`,
+            );
+            rej(reason);
+          },
+          [this.events.REQUEST_FAILED]: ({ request_id, reason }) => {
+            this.log.info(
+              `Session request ${request_id} failed, reason: ${reason}`,
+            );
+            rej(reason);
+          },
 
-        // Ready event
-        [this.events.SESSION_READY]: ({ session_id }) => {
-          this.log.info(`Session ${session_id} ready!`);
-          res(session_id);
-        },
-      };
+          // Ready event
+          [this.events.SESSION_READY]: ({ session_id }) => {
+            this.log.info(`Session ${session_id} ready!`);
+            res(session_id);
+          },
+        };
 
       Object.entries(eventHandlers).forEach(([event, handler]) => {
         this.requestTopic?.on(event, handler);
@@ -161,12 +162,12 @@ export class SessionChannel extends BaseChannel {
   }
 
   private async requestSession(
-    capabilities: TVLabsCapabilities,
+    capabilities: DeviceIOCapabilities,
   ): Promise<string> {
     this.log.info('Requesting Device.io session');
 
     try {
-      const response = await this.push<TVLabsSessionRequestResponse>(
+      const response = await this.push<DeviceIOSessionRequestResponse>(
         this.lobbyTopic,
         'requests:create',
         { capabilities },
@@ -183,7 +184,7 @@ export class SessionChannel extends BaseChannel {
     }
   }
 
-  private tvlabsSessionLink(sessionId: string) {
+  private deviceIOSessionLink(sessionId: string) {
     return `https://tvlabs.ai/app/sessions/${sessionId}`;
   }
 }

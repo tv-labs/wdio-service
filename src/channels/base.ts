@@ -4,7 +4,7 @@ import { SevereServiceError } from 'webdriverio';
 import { Logger } from '../logger.js';
 import { getServiceInfo } from '../utils.js';
 
-import type { TVLabsSocketParams, LogLevel } from '../types.js';
+import type { DeviceIOSocketParams, LogLevel } from '../types.js';
 import type { PhoenixChannelJoinResponse } from '../phoenix.js';
 
 export abstract class BaseChannel {
@@ -70,7 +70,7 @@ export abstract class BaseChannel {
     });
   }
 
-  private params(): TVLabsSocketParams {
+  private params(): DeviceIOSocketParams {
     const serviceInfo = getServiceInfo();
 
     this.log.debug('Info:', serviceInfo);
