@@ -705,7 +705,7 @@ describe('TVLabsService', () => {
       const service = new TVLabsService(options, {}, config);
 
       expect(() => service.onPrepare(config, capabilities)).toThrowError(
-        'Multi-remote capabilities are not implemented. Contact TV Labs support if you are interested in this feature.',
+        'Multi-remote capabilities are not implemented. Contact Device.io support if you are interested in this feature.',
       );
       expect(vi.mocked(process).exit).not.toHaveBeenCalledWith(1);
     });
@@ -721,7 +721,7 @@ describe('TVLabsService', () => {
       const service = new TVLabsService(options, {}, config);
 
       expect(() => service.onPrepare(config, capabilities)).toThrowError(
-        'Multi-remote capabilities are not implemented. Contact TV Labs support if you are interested in this feature.',
+        'Multi-remote capabilities are not implemented. Contact Device.io support if you are interested in this feature.',
       );
       expect(vi.mocked(process).exit).toHaveBeenCalledWith(1);
     });

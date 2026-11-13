@@ -84,7 +84,7 @@ export abstract class BaseChannel {
   private reconnectAfterMs(tries: number) {
     if (tries > this.maxReconnectRetries) {
       throw new SevereServiceError(
-        'Could not connect to TV Labs, please check your connection.',
+        'Could not connect to Device.io, please check your connection.',
       );
     }
 

@@ -8,7 +8,7 @@ const packageJson = await fs.readFile(
 );
 const packageObject = JSON.parse(packageJson);
 
-describe('TV Labs Utils', () => {
+describe('Device.io Utils', () => {
   it('can get the service version', async () => {
     expect(getServiceVersion()).not.toBe('unknown');
     expect(getServiceVersion()).toBe(packageObject.version);

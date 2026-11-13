@@ -163,7 +163,7 @@ export class SessionChannel extends BaseChannel {
   private async requestSession(
     capabilities: TVLabsCapabilities,
   ): Promise<string> {
-    this.log.info('Requesting TV Labs session');
+    this.log.info('Requesting Device.io session');
 
     try {
       const response = await this.push<TVLabsSessionRequestResponse>(

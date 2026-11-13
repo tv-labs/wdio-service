@@ -177,7 +177,7 @@ export default class TVLabsService implements Services.ServiceInstance {
     try {
       if (!Array.isArray(param)) {
         throw new SevereServiceError(
-          'Multi-remote capabilities are not implemented. Contact TV Labs support if you are interested in this feature.',
+          'Multi-remote capabilities are not implemented. Contact Device.io support if you are interested in this feature.',
         );
       }
     } catch (error) {
