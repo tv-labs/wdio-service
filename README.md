@@ -10,6 +10,8 @@
 
 ## Introduction
 
+We are moving to `@deviceio/wdio-service`.
+
 [![npm](https://img.shields.io/npm/v/@tvlabs/wdio-service)](https://www.npmjs.com/package/@tvlabs/wdio-service)
 
 The `@tvlabs/wdio-service` package uses a websocket to connect to the TV Labs platform before an Appium session begins, logging events relating to build upload and session creation as they occur. This offloads the responsibility of creating the TV Labs session from the `POST /session` Webdriver endpoint, leading to more reliable session requests and creation.
